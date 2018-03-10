@@ -5,17 +5,19 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.CardView;
-import android.view.LayoutInflater;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
-    private CardView cardView;
+    private RecyclerView habitListRecyclerView;
+    private RecyclerView.Adapter habitListRecyclerViewAdapter;
+    private RecyclerView.LayoutManager habitListRecyclerViewLayoutManager;
+
     private AutoCompleteTextView habitCreateTextInput;
     private Button habitCreateButton;
     private HabitDatabase db;
@@ -38,15 +40,6 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
             if (currentPage > 0) {
-                cardView.removeAllViews();
-                LayoutInflater inflater = getLayoutInflater();
-                for (Habit h : db.habitDao().loadAllHabits()) {
-                    View child = getLayoutInflater().inflate(R.layout.habit_card, cardView, true);
-                    TextView habitTitle = child.findViewById(R.id.habit_title);
-                    habitTitle.setText(h.title);
-                    TextView habitDescription = child.findViewById(R.id.habit_description);
-                    habitDescription.setText(currentPage);
-                }
                 return true;
             }
             return false;
@@ -58,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        cardView = findViewById(R.id.cardview);
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
@@ -70,6 +62,16 @@ public class MainActivity extends AppCompatActivity {
                 // TODO(davidw): Remove this!
                 .allowMainThreadQueries()
                 .build();
+
+
+        habitListRecyclerView = findViewById(R.id.habit_list_recycler_view);
+        // TODO Why?
+        habitListRecyclerView.setHasFixedSize(true);
+        habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
+        habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
+        habitListRecyclerViewAdapter = new HabitList(db.habitDao().loadAllHabits());
+        habitListRecyclerView.setAdapter(habitListRecyclerViewAdapter);
+
 
         habitCreateButton = findViewById(R.id.habit_create_button);
         habitCreateTextInput = findViewById(R.id.habit_title_input);
