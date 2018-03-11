@@ -1,6 +1,7 @@
 package com.dwett.habits;
 
 import android.arch.persistence.room.Room;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -9,6 +10,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 
@@ -69,7 +71,8 @@ public class MainActivity extends AppCompatActivity {
         habitListRecyclerView.setHasFixedSize(true);
         habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
         habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
-        habitListRecyclerViewAdapter = new HabitList(db.habitDao().loadAllHabits());
+        final HabitList habitList = new HabitList(db.habitDao().loadAllHabits(), db);
+        habitListRecyclerViewAdapter = habitList;
         habitListRecyclerView.setAdapter(habitListRecyclerViewAdapter);
 
 
@@ -80,7 +83,15 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Habit h = new Habit();
                 h.title = habitCreateTextInput.getText().toString();
+                h.period = 7 * 24;
+                h.frequency = 1;
                 db.habitDao().insertNewHabit(h);
+                habitList.addHabit(h);
+                habitCreateTextInput.setText("");
+
+                // Close the keyboard hackily?
+                InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
             }
         });
     }

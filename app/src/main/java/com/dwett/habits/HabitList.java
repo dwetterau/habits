@@ -5,6 +5,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.Arrays;
@@ -13,11 +14,12 @@ import java.util.LinkedList;
 public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
     private LinkedList<Habit> habits;
+    private HabitDatabase db;
 
-    public HabitList(Habit[] habits) {
+    public HabitList(Habit[] habits, HabitDatabase db) {
         this.habits = new LinkedList<>();
-        Log.i("HABIT_HOLDER", "Number of habits: " + habits.length);
         this.habits.addAll(Arrays.asList(habits));
+        this.db = db;
     }
 
     @Override
@@ -29,18 +31,46 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
     }
 
     @Override
-    public void onBindViewHolder(HabitHolder holder, int position) {
-        Log.i("HABIT_HOLDER", "Binding habit at position" + position);
-        holder.title.setText(this.habits.get(position).title);
-        holder.description.setText("A cool description...");
+    public void onBindViewHolder(final HabitHolder holder, int position) {
+        final Habit thisHabit = this.habits.get(position);
+        final HabitList thisList = this;
+        holder.title.setText(thisHabit.title);
+        Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
+        holder.description.setText("Done " + events.length + " times.");
+
+        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                db.habitDao().deleteHabit(thisHabit);
+                thisList.removeHabit(holder.getAdapterPosition());
+            }
+        });
+
+        holder.doneButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Event event = new Event();
+                event.habitId = thisHabit.id;
+                event.timestamp = System.currentTimeMillis();
+                db.habitDao().insertNewEvent(event);
+                thisList.notifyHabitUpdated(holder.getAdapterPosition());
+            }
+        });
     }
 
     public void addHabit(Habit h) {
         this.habits.add(h);
+        this.notifyItemInserted(this.getItemCount() - 1);
     }
 
     public void removeHabit(int index) {
         this.habits.remove(index);
+        this.notifyItemRangeRemoved(index, 1);
+        this.notifyItemRangeChanged(index, this.getItemCount());
+    }
+
+    public void notifyHabitUpdated(int index) {
+        this.notifyItemChanged(index);
     }
 
     @Override
@@ -52,11 +82,15 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
         private TextView title;
         private TextView description;
+        private Button deleteButton;
+        private Button doneButton;
 
         HabitHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.habit_title);
             description = itemView.findViewById(R.id.habit_description);
+            deleteButton = itemView.findViewById(R.id.habit_delete_button);
+            doneButton = itemView.findViewById(R.id.habit_done_button);
         }
 
         // TODO: Add listeners?

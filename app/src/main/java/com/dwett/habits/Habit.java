@@ -12,9 +12,15 @@ class Habit {
     @ColumnInfo(name = "title")
     String title;
 
+    /**
+     * Number of hours
+     */
     @ColumnInfo(name = "period")
     int period;
 
+    /**
+     * Number of times / period
+     */
     @ColumnInfo(name = "frequency")
     int frequency;
 }

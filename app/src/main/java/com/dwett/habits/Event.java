@@ -25,6 +25,9 @@ public class Event {
     @ColumnInfo(name = "habit_id")
     int habitId;
 
+    /**
+     * An output of `System.currentTimeMillis()`
+     */
     @ColumnInfo(name = "timestamp")
     long timestamp;
 }
