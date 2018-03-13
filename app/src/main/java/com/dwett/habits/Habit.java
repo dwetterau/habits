@@ -7,7 +7,7 @@ import android.arch.persistence.room.PrimaryKey;
 @Entity
 class Habit {
     @PrimaryKey(autoGenerate = true)
-    int id;
+    long id;
 
     @ColumnInfo(name = "title")
     String title;

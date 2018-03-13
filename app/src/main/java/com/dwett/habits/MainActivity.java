@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
                 h.title = habitCreateTextInput.getText().toString();
                 h.period = 7 * 24;
                 h.frequency = 1;
-                db.habitDao().insertNewHabit(h);
+                h.id = db.habitDao().insertNewHabit(h);
                 habitList.addHabit(h);
                 habitCreateTextInput.setText("");
 

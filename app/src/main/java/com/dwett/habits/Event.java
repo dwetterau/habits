@@ -20,10 +20,10 @@ import java.util.Date;
 ))
 public class Event {
     @PrimaryKey(autoGenerate = true)
-    int id;
+    long id;
 
     @ColumnInfo(name = "habit_id")
-    int habitId;
+    long habitId;
 
     /**
      * An output of `System.currentTimeMillis()`

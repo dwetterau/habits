@@ -32,8 +32,8 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
     @Override
     public void onBindViewHolder(final HabitHolder holder, int position) {
-        final Habit thisHabit = this.habits.get(position);
         final HabitList thisList = this;
+        final Habit thisHabit = this.habits.get(position);
         holder.title.setText(thisHabit.title);
         Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
         holder.description.setText("Done " + events.length + " times.");
@@ -41,6 +41,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         holder.deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
                 db.habitDao().deleteHabit(thisHabit);
                 thisList.removeHabit(holder.getAdapterPosition());
             }
@@ -50,7 +51,10 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
             @Override
             public void onClick(View v) {
                 Event event = new Event();
+
+                Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
                 event.habitId = thisHabit.id;
+
                 event.timestamp = System.currentTimeMillis();
                 db.habitDao().insertNewEvent(event);
                 thisList.notifyHabitUpdated(holder.getAdapterPosition());

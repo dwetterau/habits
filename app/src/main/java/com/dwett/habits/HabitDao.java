@@ -8,7 +8,7 @@ import android.arch.persistence.room.Query;
 @Dao
 public interface HabitDao {
     @Insert
-    void insertNewHabit(Habit h);
+    long insertNewHabit(Habit h);
 
     @Insert
     void insertNewEvent(Event e);
@@ -23,5 +23,5 @@ public interface HabitDao {
     Habit[] loadAllHabits();
 
     @Query("SELECT * FROM event where habit_id = :habitId")
-    Event[] loadEventsForHabit(int habitId);
+    Event[] loadEventsForHabit(long habitId);
 }
