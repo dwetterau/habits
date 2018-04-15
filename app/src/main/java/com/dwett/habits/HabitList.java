@@ -1,12 +1,14 @@
 package com.dwett.habits;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -15,6 +17,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
     private LinkedList<Habit> habits;
     private HabitDatabase db;
+    private AlertDialog.Builder deleteConfirmerBuilder;
 
     public HabitList(Habit[] habits, HabitDatabase db) {
         this.habits = new LinkedList<>();
@@ -23,9 +26,14 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
     }
 
     @Override
-    public HabitHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public HabitHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.habit_list, parent, false);
+
+        deleteConfirmerBuilder = new AlertDialog.Builder(parent.getContext())
+                .setTitle("Confirm deletion")
+                .setMessage("Do you really want to delete this habit?")
+                .setNegativeButton(android.R.string.no, null);
 
         return new HabitHolder(view);
     }
@@ -41,9 +49,17 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         holder.deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
-                db.habitDao().deleteHabit(thisHabit);
-                thisList.removeHabit(holder.getAdapterPosition());
+                final Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
+
+                deleteConfirmerBuilder.setPositiveButton(
+                        android.R.string.yes,
+                        new DialogInterface.OnClickListener() {
+
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        db.habitDao().deleteHabit(thisHabit);
+                        thisList.removeHabit(holder.getAdapterPosition());
+                    }}
+                ).show();
             }
         });
 
