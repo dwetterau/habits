@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -44,7 +43,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         final Habit thisHabit = this.habits.get(position);
         holder.title.setText(thisHabit.title);
         Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
-        holder.description.setText("Done " + events.length + " times.");
+        holder.description.setText(HabitLogic.getDescription(thisHabit, events));
 
         holder.deleteButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -63,19 +62,24 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
             }
         });
 
-        holder.doneButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Event event = new Event();
+        if (HabitLogic.shouldAllowDone(thisHabit, events)) {
+            holder.doneButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Event event = new Event();
 
-                Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
-                event.habitId = thisHabit.id;
+                    Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
+                    event.habitId = thisHabit.id;
 
-                event.timestamp = System.currentTimeMillis();
-                db.habitDao().insertNewEvent(event);
-                thisList.notifyHabitUpdated(holder.getAdapterPosition());
-            }
-        });
+                    event.timestamp = System.currentTimeMillis();
+                    db.habitDao().insertNewEvent(event);
+                    thisList.notifyHabitUpdated(holder.getAdapterPosition());
+                }
+            });
+            holder.doneButton.setEnabled(true);
+        } else {
+            holder.doneButton.setEnabled(false);
+        }
     }
 
     public void addHabit(Habit h) {
