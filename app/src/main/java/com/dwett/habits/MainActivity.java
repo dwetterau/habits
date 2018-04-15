@@ -10,51 +10,26 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
+    private HabitList habitList;
+
     private RecyclerView habitListRecyclerView;
-    private RecyclerView.Adapter habitListRecyclerViewAdapter;
-    private RecyclerView.LayoutManager habitListRecyclerViewLayoutManager;
 
     private AutoCompleteTextView habitCreateTextInput;
-    private Button habitCreateButton;
     private HabitDatabase db;
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            int currentPage = 0;
-            switch (item.getItemId()) {
-                case R.id.navigation_home:
-                    currentPage = R.string.title_updates;
-                    break;
-                case R.id.navigation_dashboard:
-                    currentPage = R.string.title_habits;
-                    break;
-                case R.id.navigation_notifications:
-                    currentPage = R.string.title_notifications;
-                    break;
-            }
-            if (currentPage > 0) {
-                return true;
-            }
-            return false;
-        }
-    };
+    private View manageHabitView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        BottomNavigationView navigation = findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         db = Room.databaseBuilder(
                 getApplicationContext(),
@@ -65,19 +40,66 @@ public class MainActivity extends AppCompatActivity {
                 .allowMainThreadQueries()
                 .build();
 
+        habitList = new HabitList(db.habitDao().loadAllHabits(), db);
 
+        BottomNavigationView navigation = findViewById(R.id.navigation);
+        navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                return inflateBasedOffMenuItem(item.getItemId());
+            }
+        });
+        this.inflateBasedOffMenuItem(navigation.getSelectedItemId());
+    }
+
+    /*
+     * Returns if a known type was selected
+     */
+    private boolean inflateBasedOffMenuItem(int item) {
+        switch (item) {
+            case R.id.navigation_summary:
+                this.hideManageHabits();
+                // TODO build a summary view and inflate it here
+                this.inflateHabitList();
+                break;
+            case R.id.navigation_habits:
+                this.hideManageHabits();
+                // Inflate the habit list view
+                this.inflateHabitList();
+                break;
+            case R.id.navigation_manage:
+                this.hideHabitList();
+                // Inflate the view to create habits
+                this.inflateManageHabits();
+                break;
+            default:
+                return false;
+        }
+        return true;
+    }
+
+    private void inflateHabitList() {
         habitListRecyclerView = findViewById(R.id.habit_list_recycler_view);
         // TODO Why?
         habitListRecyclerView.setHasFixedSize(true);
-        habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
+        RecyclerView.LayoutManager habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
         habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
-        final HabitList habitList = new HabitList(db.habitDao().loadAllHabits(), db);
-        habitListRecyclerViewAdapter = habitList;
+        RecyclerView.Adapter habitListRecyclerViewAdapter = habitList;
         habitListRecyclerView.setAdapter(habitListRecyclerViewAdapter);
+        habitListRecyclerView.setVisibility(View.VISIBLE);
+    }
 
+    private void hideHabitList() {
+        habitListRecyclerView.setVisibility(View.INVISIBLE);
+    }
 
-        habitCreateButton = findViewById(R.id.habit_create_button);
-        habitCreateTextInput = findViewById(R.id.habit_title_input);
+    private void inflateManageHabits() {
+        manageHabitView = getLayoutInflater().inflate(
+                R.layout.create_habit,
+                null);
+
+        Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
+        habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
         habitCreateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -94,6 +116,12 @@ public class MainActivity extends AppCompatActivity {
                 in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
             }
         });
+        ((ViewGroup) findViewById(R.id.container)).addView(manageHabitView);
     }
 
+    private void hideManageHabits() {
+        if (manageHabitView != null) {
+            manageHabitView.setVisibility(View.INVISIBLE);
+        }
+    }
 }
