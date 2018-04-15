@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/habit_title_label"
@@ -76,14 +76,35 @@
     </RadioGroup>
 
     <Button
+        android:id="@+id/habit_delete_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="36dp"
+        android:text="Delete"
+        app:layout_constraintEnd_toStartOf="@+id/habit_create_button"
+        app:layout_constraintTop_toBottomOf="@+id/habit_frequency_input" />
+
+    <Button
         android:id="@+id/habit_create_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginTop="40dp"
-        android:text="Add Habit"
+        android:layout_marginTop="36dp"
+        android:text="Save"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/habit_frequency_input" />
 
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/event_list_recycler_view"
+        android:layout_width="393dp"
+        android:layout_height="367dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:scrollbars="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/habit_create_button" />
 
 </android.support.constraint.ConstraintLayout>

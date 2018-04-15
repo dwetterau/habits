@@ -4,6 +4,7 @@ import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
 import android.arch.persistence.room.Query;
+import android.arch.persistence.room.Update;
 
 @Dao
 public interface HabitDao {
@@ -15,6 +16,9 @@ public interface HabitDao {
 
     @Delete
     void deleteHabit(Habit h);
+
+    @Update
+    void updateHabit(Habit h);
 
     @Delete
     void deleteEvent(Event e);

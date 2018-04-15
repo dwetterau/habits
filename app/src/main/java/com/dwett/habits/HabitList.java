@@ -1,8 +1,7 @@
 package com.dwett.habits;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.support.v7.widget.RecyclerView;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,28 +10,25 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.function.Consumer;
 
 public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
     private LinkedList<Habit> habits;
     private HabitDatabase db;
-    private AlertDialog.Builder deleteConfirmerBuilder;
+    private Consumer<Pair<Habit, Event[]>> editHabitCallback;
 
-    public HabitList(Habit[] habits, HabitDatabase db) {
+    public HabitList(Habit[] habits, HabitDatabase db, Consumer<Pair<Habit, Event[]>> editHabitCallback) {
         this.habits = new LinkedList<>();
         this.habits.addAll(Arrays.asList(habits));
         this.db = db;
+        this.editHabitCallback = editHabitCallback;
     }
 
     @Override
     public HabitHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.habit_list, parent, false);
-
-        deleteConfirmerBuilder = new AlertDialog.Builder(parent.getContext())
-                .setTitle("Confirm deletion")
-                .setMessage("Do you really want to delete this habit?")
-                .setNegativeButton(android.R.string.no, null);
 
         return new HabitHolder(view);
     }
@@ -45,20 +41,14 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
         holder.description.setText(HabitLogic.getDescription(thisHabit, events));
 
-        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+        holder.editButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                final Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
+                Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
+                Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
 
-                deleteConfirmerBuilder.setPositiveButton(
-                        android.R.string.yes,
-                        new DialogInterface.OnClickListener() {
-
-                    public void onClick(DialogInterface dialog, int whichButton) {
-                        db.habitDao().deleteHabit(thisHabit);
-                        thisList.removeHabit(holder.getAdapterPosition());
-                    }}
-                ).show();
+                // Go to the tab to edit the habit
+                editHabitCallback.accept(new Pair<>(thisHabit, events));
             }
         });
 
@@ -73,7 +63,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
                     event.timestamp = System.currentTimeMillis();
                     db.habitDao().insertNewEvent(event);
-                    thisList.notifyHabitUpdated(holder.getAdapterPosition());
+                    thisList.notifyHabitUpdated(thisHabit);
                 }
             });
             holder.doneButton.setEnabled(true);
@@ -93,8 +83,19 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         this.notifyItemRangeChanged(index, this.getItemCount());
     }
 
-    public void notifyHabitUpdated(int index) {
-        this.notifyItemChanged(index);
+    public int getHabitIndex(Habit h) {
+        int i = 0;
+        for (Habit cur : this.habits) {
+            if (cur.id == h.id) {
+                return i;
+            }
+            i++;
+        }
+        throw new RuntimeException("Unexpected habit passed to getHabitIndex " + h.id);
+    }
+
+    public void notifyHabitUpdated(Habit h) {
+         this.notifyItemChanged(this.getHabitIndex(h));
     }
 
     @Override
@@ -106,14 +107,14 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
         private TextView title;
         private TextView description;
-        private Button deleteButton;
+        private Button editButton;
         private Button doneButton;
 
         HabitHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.habit_title);
             description = itemView.findViewById(R.id.habit_description);
-            deleteButton = itemView.findViewById(R.id.habit_delete_button);
+            editButton = itemView.findViewById(R.id.habit_edit_button);
             doneButton = itemView.findViewById(R.id.habit_done_button);
         }
 

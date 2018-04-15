@@ -1,13 +1,16 @@
 package com.dwett.habits;
 
+import android.app.AlertDialog;
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +20,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 
+import java.util.function.Consumer;
+
 public class MainActivity extends AppCompatActivity {
 
     private HabitList habitList;
@@ -24,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
     private HabitDatabase db;
 
     private View manageHabitView;
+
+    private Habit habitToEdit;
+    private Event[] eventsForHabitToEdit;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                 .allowMainThreadQueries()
                 .build();
 
-        habitList = new HabitList(db.habitDao().loadAllHabits(), db);
+        habitList = new HabitList(db.habitDao().loadAllHabits(), db, new habitEditor(this));
 
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -49,6 +57,27 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         this.inflateBasedOffMenuItem(navigation.getSelectedItemId());
+    }
+
+    private void setHabitToEdit(Habit h, Event[] events) {
+        this.habitToEdit = h;
+        this.eventsForHabitToEdit = events;
+    }
+
+    private class habitEditor implements Consumer<Pair<Habit, Event[]>> {
+        MainActivity a;
+
+        public habitEditor(MainActivity a) {
+            this.a = a;
+        }
+
+        @Override
+        public void accept(Pair<Habit, Event[]> pair) {
+            a.setHabitToEdit(pair.first, pair.second);
+            BottomNavigationView navigation = findViewById(R.id.navigation);
+            navigation.setSelectedItemId(R.id.navigation_manage);
+            a.inflateBasedOffMenuItem(R.id.navigation_manage);
+        }
     }
 
     /*
@@ -93,10 +122,16 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void inflateManageHabits() {
-        manageHabitView = getLayoutInflater().inflate(
-                R.layout.create_habit,
-                null);
+        boolean firstInitialization = manageHabitView == null;
+        if (firstInitialization) {
+            manageHabitView = getLayoutInflater().inflate(
+                    R.layout.create_habit,
+                    null);
+        } else {
+            manageHabitView.setVisibility(View.VISIBLE);
+        }
 
+        final Button habitDeleteButton = manageHabitView.findViewById(R.id.habit_delete_button);
         Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
         habitCreateButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -136,10 +171,97 @@ public class MainActivity extends AppCompatActivity {
                 // TODO: Navigate to the habits page?
             }
         });
-        ((ViewGroup) findViewById(R.id.container)).addView(manageHabitView);
+
+        RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
+        // TODO Why?
+        eventListRecyclerView.setHasFixedSize(true);
+        RecyclerView.LayoutManager eventListRecyclerViewLayoutManager = new LinearLayoutManager(
+                manageHabitView.getContext()
+        );
+        eventListRecyclerView.setLayoutManager(eventListRecyclerViewLayoutManager);
+        eventListRecyclerView.setAdapter(new EventList(new Event[]{}, db));
+
+        if (habitToEdit != null) {
+            // TODO Populate other fields to edit too!
+            AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
+            EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
+            RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+
+            habitCreateTextInput.setText(habitToEdit.title);
+            habitCreateFrequencyInput.setText(Integer.toString(habitToEdit.frequency));
+            if (habitToEdit.period == 24) {
+                habitCreatePeriodRadioGroup.check(R.id.daily_radio_button);
+            } else if (habitToEdit.period == 7 * 24) {
+                habitCreatePeriodRadioGroup.check(R.id.weekly_radio_button);
+            }
+
+           habitCreateButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
+                    EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
+                    RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+
+                    if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.daily_radio_button) {
+                        habitToEdit.period = 24;
+                    } else if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.weekly_radio_button) {
+                        habitToEdit.period = 7 * 24;
+                    }
+
+                    habitToEdit.title = habitCreateTextInput.getText().toString();
+
+                    String frequencyString = habitCreateFrequencyInput.getText().toString();
+                    if (frequencyString.length() > 0) {
+                        habitToEdit.frequency = Integer.parseInt(frequencyString);
+                    }
+                    db.habitDao().updateHabit(habitToEdit);
+                    habitList.notifyHabitUpdated(habitToEdit);
+
+                    // Close the keyboard hackily?
+                    InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
+                }
+            });
+            habitDeleteButton.setVisibility(View.VISIBLE);
+            final AlertDialog.Builder deleteConfirmer = new AlertDialog.Builder(manageHabitView.getContext())
+                    .setTitle("Confirm habit deletion")
+                    .setMessage("Do you really want to delete this habit?")
+                    .setNegativeButton(android.R.string.no, null);
+
+            habitDeleteButton.setOnClickListener(new Button.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+                    deleteConfirmer.setPositiveButton(
+                            android.R.string.yes,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    db.habitDao().deleteHabit(habitToEdit);
+                                    habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
+                                    habitToEdit = null;
+                                    eventsForHabitToEdit = null;
+                                }
+                            }
+                    ).show();
+                }
+            });
+
+            eventListRecyclerView.setAdapter(new EventList(eventsForHabitToEdit, db));
+        } else {
+            habitDeleteButton.setVisibility(View.INVISIBLE);
+
+        }
+
+        if (firstInitialization) {
+            ((ViewGroup) findViewById(R.id.container)).addView(manageHabitView);
+        }
     }
 
     private void hideManageHabits() {
+        // Reset the editing stuff when we navigate away
+        this.setHabitToEdit(null, null);
+
         if (manageHabitView != null) {
             manageHabitView.setVisibility(View.INVISIBLE);
         }
