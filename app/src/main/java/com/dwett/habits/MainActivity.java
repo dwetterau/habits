@@ -14,14 +14,13 @@ import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RadioGroup;
 
 public class MainActivity extends AppCompatActivity {
 
     private HabitList habitList;
-
     private RecyclerView habitListRecyclerView;
-
-    private AutoCompleteTextView habitCreateTextInput;
     private HabitDatabase db;
 
     private View manageHabitView;
@@ -99,21 +98,42 @@ public class MainActivity extends AppCompatActivity {
                 null);
 
         Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
-        habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
         habitCreateButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Habit h = new Habit();
+                AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
+                EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
+                RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+
+                if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.daily_radio_button) {
+                    h.period = 24;
+                } else if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.weekly_radio_button) {
+                    h.period = 7 * 24;
+                } else {
+                    // Default to weekly
+                    h.period = 7 * 24;
+                }
+
                 h.title = habitCreateTextInput.getText().toString();
-                h.period = 7 * 24;
-                h.frequency = 1;
+
+                String frequencyString = habitCreateFrequencyInput.getText().toString();
+                if (frequencyString.length() > 0) {
+                    h.frequency = Integer.parseInt(frequencyString);
+                } else {
+                    // Default to once / period
+                    h.frequency = 1;
+                }
                 h.id = db.habitDao().insertNewHabit(h);
                 habitList.addHabit(h);
                 habitCreateTextInput.setText("");
+                habitCreateFrequencyInput.setText("");
 
                 // Close the keyboard hackily?
                 InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
+
+                // TODO: Navigate to the habits page?
             }
         });
         ((ViewGroup) findViewById(R.id.container)).addView(manageHabitView);
