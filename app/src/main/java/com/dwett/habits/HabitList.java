@@ -9,7 +9,11 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
@@ -101,6 +105,40 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
     @Override
     public int getItemCount() {
         return this.habits.size();
+    }
+
+    public void sort() {
+        final Map<Long, Boolean> idToIsDone = new HashMap<>(habits.size());
+        for (Habit h : habits) {
+            Event[] events = db.habitDao().loadEventsForHabit(h.id);
+            idToIsDone.put(h.id, !HabitLogic.shouldAllowDone(h, events));
+        }
+        Collections.sort(this.habits, new Comparator<Habit>() {
+
+            @Override
+            public int compare(Habit o1, Habit o2) {
+                boolean o1IsDone = idToIsDone.get(o1.id);
+                boolean o2IsDone = idToIsDone.get(o2.id);
+                if (o1IsDone && !o2IsDone) {
+                    return 1;
+                }
+                if (!o1IsDone && o2IsDone) {
+                    return -1;
+                }
+
+                // Sort events that have a lower period first (e.g. daily before weekly)
+                if (o1.period < o2.period) {
+                    return -1;
+                }
+                if (o1.period > o2.period) {
+                    return 1;
+                }
+
+                // Sort events that must be done more often first (e.g. twice daily before once)
+                return o2.frequency - o1.frequency;
+            }
+        });
+        this.notifyItemRangeChanged(0, this.habits.size());
     }
 
     static class HabitHolder extends RecyclerView.ViewHolder {

@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         habitList = new HabitList(db.habitDao().loadAllHabits(), db, new habitEditor(this));
+        habitList.sort();
 
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
