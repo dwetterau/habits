@@ -181,8 +181,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
-        // TODO Why?
-        //eventListRecyclerView.setHasFixedSize(true);
         RecyclerView.LayoutManager eventListRecyclerViewLayoutManager = new LinearLayoutManager(
                 manageHabitView.getContext()
         );

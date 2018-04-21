@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedList;
 
@@ -48,7 +49,7 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
                 Instant.ofEpochMilli(thisEvent.timestamp)
                         .atZone(ZoneId.systemDefault())
                         .toLocalDateTime()
-                        .toString()
+                        .format(DateTimeFormatter.ofPattern("MMMM d, yyyy @ hh:mma"))
         );
 
         holder.deleteButton.setOnClickListener(new View.OnClickListener() {
