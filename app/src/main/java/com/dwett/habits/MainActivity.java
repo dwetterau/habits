@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity {
                 manageHabitView.getContext()
         );
         eventListRecyclerView.setLayoutManager(eventListRecyclerViewLayoutManager);
-        eventListRecyclerView.setAdapter(new EventList(new Event[]{}, db));
+        eventListRecyclerView.setAdapter(new EventList(new Event[]{}, db, getFragmentManager()));
 
         if (habitToEdit != null) {
             // TODO Populate other fields to edit too!
@@ -259,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
                     return (int)(e2.timestamp - e1.timestamp);
                 }
             });
-            eventListRecyclerView.setAdapter(new EventList(eventsForHabitToEdit, db));
+            eventListRecyclerView.setAdapter(new EventList(eventsForHabitToEdit, db, getFragmentManager()));
         } else {
             habitDeleteButton.setVisibility(View.INVISIBLE);
         }

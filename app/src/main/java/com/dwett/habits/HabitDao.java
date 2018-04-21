@@ -11,17 +11,20 @@ public interface HabitDao {
     @Insert
     long insertNewHabit(Habit h);
 
-    @Insert
-    void insertNewEvent(Event e);
-
     @Delete
     void deleteHabit(Habit h);
 
     @Update
     void updateHabit(Habit h);
 
+    @Insert
+    void insertNewEvent(Event e);
+
     @Delete
     void deleteEvent(Event e);
+
+    @Update
+    void updateEvent(Event e);
 
     @Query("SELECT * FROM habit")
     Habit[] loadAllHabits();

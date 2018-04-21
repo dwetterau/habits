@@ -51,7 +51,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
                 Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
                 Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
 
-                // Go to the tab to edit the habit
+                // Go to the tab to edit the habit.timestamp
                 editHabitCallback.accept(new Pair<>(thisHabit, events));
             }
         });
