@@ -27,20 +27,32 @@
             android:layout_height="wrap_content">
 
             <TextView
-                android:id="@+id/event_timestamp"
-                android:layout_width="0dp"
+                android:id="@+id/event_date"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
-                android:layout_marginEnd="8dp"
                 android:layout_marginStart="8dp"
                 android:layout_marginTop="8dp"
-                android:text="Apr 20, 2018 @ 12:23PM"
+                android:text="April 20, 2018"
                 android:textAlignment="center"
                 android:textSize="18sp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
                 card_view:layout_constraintBottom_toBottomOf="parent"
-                card_view:layout_constraintEnd_toStartOf="@+id/event_delete_button" />
+                card_view:layout_constraintStart_toStartOf="parent"
+                card_view:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/event_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="at 12:23PM"
+                android:textAlignment="center"
+                android:textSize="18sp"
+                card_view:layout_constraintBottom_toBottomOf="parent"
+                card_view:layout_constraintStart_toEndOf="@+id/event_date"
+                card_view:layout_constraintTop_toTopOf="parent" />
 
             <Button
                 android:id="@+id/event_delete_button"

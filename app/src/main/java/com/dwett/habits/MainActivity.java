@@ -256,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
             Arrays.sort(eventsForHabitToEdit, new Comparator<Event>() {
                 @Override
                 public int compare(Event e1, Event e2) {
-                    return (int)(e2.timestamp - e1.timestamp);
+                    return (int) (e2.timestamp - e1.timestamp);
                 }
             });
             eventListRecyclerView.setAdapter(new EventList(eventsForHabitToEdit, db, getFragmentManager()));

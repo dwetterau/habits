@@ -5,21 +5,22 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
+import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+import android.text.format.DateFormat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.TextView;
+import android.widget.TimePicker;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -56,13 +57,11 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
         final EventList thisList = this;
         final Event thisEvent = this.events.get(position);
 
-        holder.eventTimestamp.setText(
-                Instant.ofEpochMilli(thisEvent.timestamp)
-                        .atZone(ZoneId.systemDefault())
-                        .toLocalDateTime()
-                        .format(DateTimeFormatter.ofPattern("MMMM d, yyyy @ hh:mma"))
-        );
-        holder.eventTimestamp.setOnClickListener(new View.OnClickListener() {
+        final LocalDateTime time = Instant.ofEpochMilli(thisEvent.timestamp)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        holder.eventDate.setText(time.format(DateTimeFormatter.ofPattern("MMMM d, yyyy")));
+        holder.eventDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // First show a date picker to allow the date to be adjusted
@@ -70,6 +69,17 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
                 datePicker.setEvent(thisEvent);
                 datePicker.setEventList(thisList);
                 datePicker.show(thisList.fm, "datePicker");
+            }
+        });
+        holder.eventTime.setText(time.format(DateTimeFormatter.ofPattern("@ hh:mma")));
+        holder.eventTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // First show a time picker to allow the time to be adjusted
+                EventTimePicker timePicker = new EventTimePicker();
+                timePicker.setEvent(thisEvent);
+                timePicker.setEventList(thisList);
+                timePicker.show(thisList.fm, "timePicker");
             }
         });
 
@@ -117,7 +127,7 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
     }
 
     public void notifyEventUpdated(Event e) {
-         this.notifyItemChanged(this.getEventIndex(e));
+        this.notifyItemChanged(this.getEventIndex(e));
     }
 
     @Override
@@ -127,12 +137,14 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
 
     static class EventHolder extends RecyclerView.ViewHolder {
 
-        private TextView eventTimestamp;
+        private TextView eventDate;
+        private TextView eventTime;
         private Button deleteButton;
 
         EventHolder(View itemView) {
             super(itemView);
-            eventTimestamp = itemView.findViewById(R.id.event_timestamp);
+            eventDate = itemView.findViewById(R.id.event_date);
+            eventTime = itemView.findViewById(R.id.event_time);
             deleteButton = itemView.findViewById(R.id.event_delete_button);
         }
 
@@ -165,7 +177,7 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
                     getActivity(),
                     this,
                     dt.getYear(),
-                    dt.getMonthValue(),
+                    dt.getMonthValue() - 1,
                     dt.getDayOfMonth());
         }
 
@@ -178,10 +190,60 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
 
             LocalDateTime newDateTime = LocalDateTime.of(
                     year,
-                    month,
+                    month + 1,
                     dayOfMonth,
                     dt.getHour(),
                     dt.getMinute());
+
+            e.timestamp = newDateTime.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
+            list.db.habitDao().updateEvent(e);
+            list.notifyEventUpdated(e);
+        }
+    }
+
+    public static class EventTimePicker extends DialogFragment implements TimePickerDialog.OnTimeSetListener {
+
+        Event e;
+        EventList list;
+
+        public void setEvent(Event e) {
+            this.e = e;
+        }
+
+        public void setEventList(EventList list) {
+            this.list = list;
+        }
+
+        @Override
+        public Dialog onCreateDialog(Bundle savedInstanceState) {
+            // Use the current date as the default date in the picker
+
+            LocalDateTime dt = Instant.ofEpochMilli(this.e.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+            // Create a new instance of DatePickerDialog and return it
+            return new TimePickerDialog(
+                    getActivity(),
+                    this,
+                    dt.getHour(),
+                    dt.getMinute(),
+                    DateFormat.is24HourFormat(getActivity()));
+        }
+
+        @Override
+        public void onTimeSet(TimePicker view, int hour, int minute) {
+
+            LocalDateTime dt = Instant.ofEpochMilli(this.e.timestamp)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+            LocalDateTime newDateTime = LocalDateTime.of(
+                    dt.getYear(),
+                    dt.getMonthValue(),
+                    dt.getDayOfMonth(),
+                    hour,
+                    minute);
 
             e.timestamp = newDateTime.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
             list.db.habitDao().updateEvent(e);
