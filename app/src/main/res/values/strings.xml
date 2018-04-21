@@ -3,4 +3,6 @@
     <string name="title_manage">Manage</string>
     <string name="title_habits">Habits</string>
     <string name="title_summary">Summary</string>
+    <string name="channel_name">Habits</string>
+    <string name="channel_description">For habit notifications</string>
 </resources>

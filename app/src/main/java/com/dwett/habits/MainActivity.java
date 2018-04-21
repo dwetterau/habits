@@ -1,12 +1,16 @@
 package com.dwett.habits;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -21,7 +25,6 @@ import android.widget.EditText;
 import android.widget.RadioGroup;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.function.Consumer;
 
@@ -61,6 +64,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         this.inflateBasedOffMenuItem(navigation.getSelectedItemId());
+
+        // Set up the reminder
+        CharSequence name = getString(R.string.channel_name);
+        String description = getString(R.string.channel_description);
+        int importance = NotificationManagerCompat.IMPORTANCE_DEFAULT;
+        @SuppressLint("WrongConstant") NotificationChannel channel = new NotificationChannel(
+                NotificationScheduler.CHANNEL_ID,
+                name,
+                importance);
+        channel.setDescription(description);
+        // Register the channel with the system
+        NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.createNotificationChannel(channel);
+
+        NotificationScheduler.scheduleAlarm(this, AlarmReceiver.class);
     }
 
     private void setHabitToEdit(Habit h, Event[] events) {
