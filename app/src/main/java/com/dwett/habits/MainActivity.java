@@ -20,6 +20,9 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.function.Consumer;
 
 public class MainActivity extends AppCompatActivity {
@@ -179,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
         // TODO Why?
-        eventListRecyclerView.setHasFixedSize(true);
+        //eventListRecyclerView.setHasFixedSize(true);
         RecyclerView.LayoutManager eventListRecyclerViewLayoutManager = new LinearLayoutManager(
                 manageHabitView.getContext()
         );
@@ -200,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
                 habitCreatePeriodRadioGroup.check(R.id.weekly_radio_button);
             }
 
-           habitCreateButton.setOnClickListener(new View.OnClickListener() {
+            habitCreateButton.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
@@ -252,10 +255,15 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+            Arrays.sort(eventsForHabitToEdit, new Comparator<Event>() {
+                @Override
+                public int compare(Event e1, Event e2) {
+                    return (int)(e2.timestamp - e1.timestamp);
+                }
+            });
             eventListRecyclerView.setAdapter(new EventList(eventsForHabitToEdit, db));
         } else {
             habitDeleteButton.setVisibility(View.INVISIBLE);
-
         }
 
         if (firstInitialization) {
@@ -268,6 +276,15 @@ public class MainActivity extends AppCompatActivity {
         this.setHabitToEdit(null, null);
 
         if (manageHabitView != null) {
+            AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
+            EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
+            RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+
+            // Restore defaults too
+            habitCreateTextInput.setText("");
+            habitCreateFrequencyInput.setText("");
+            habitCreatePeriodRadioGroup.check(R.id.weekly_radio_button);
+
             manageHabitView.setVisibility(View.INVISIBLE);
         }
     }
