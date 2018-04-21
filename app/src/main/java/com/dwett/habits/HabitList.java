@@ -67,7 +67,14 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
                     event.timestamp = System.currentTimeMillis();
                     db.habitDao().insertNewEvent(event);
-                    thisList.notifyHabitUpdated(thisHabit);
+
+                    Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
+                    if (!HabitLogic.shouldAllowDone(thisHabit, events)) {
+                        // Habit is finished, re-sort!
+                        thisList.sort();
+                    } else {
+                        thisList.notifyHabitUpdated(thisHabit);
+                    }
                 }
             });
             holder.doneButton.setEnabled(true);
@@ -108,10 +115,13 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
     }
 
     public void sort() {
+        long[] originalIDOrder = new long[habits.size()];
         final Map<Long, Boolean> idToIsDone = new HashMap<>(habits.size());
+        int i = 0;
         for (Habit h : habits) {
             Event[] events = db.habitDao().loadEventsForHabit(h.id);
             idToIsDone.put(h.id, !HabitLogic.shouldAllowDone(h, events));
+            originalIDOrder[i++] = h.id;
         }
         Collections.sort(this.habits, new Comparator<Habit>() {
 
@@ -138,7 +148,15 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
                 return o2.frequency - o1.frequency;
             }
         });
-        this.notifyItemRangeChanged(0, this.habits.size());
+
+        // Only notify on change if we changed something...
+        i = 0;
+        for (Habit h : habits) {
+            if (h.id != originalIDOrder[i++]) {
+                this.notifyItemRangeChanged(0, this.habits.size());
+                return;
+            }
+        }
     }
 
     static class HabitHolder extends RecyclerView.ViewHolder {

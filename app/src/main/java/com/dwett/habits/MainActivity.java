@@ -108,13 +108,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void inflateHabitList() {
-        habitListRecyclerView = findViewById(R.id.habit_list_recycler_view);
-        // TODO Why?
-        habitListRecyclerView.setHasFixedSize(true);
-        RecyclerView.LayoutManager habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
-        habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
-        RecyclerView.Adapter habitListRecyclerViewAdapter = habitList;
-        habitListRecyclerView.setAdapter(habitListRecyclerViewAdapter);
+        boolean firstInitialization = habitListRecyclerView == null;
+        if (firstInitialization) {
+            habitListRecyclerView = findViewById(R.id.habit_list_recycler_view);
+            // TODO Why?
+            habitListRecyclerView.setHasFixedSize(true);
+            RecyclerView.LayoutManager habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
+            habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
+            RecyclerView.Adapter habitListRecyclerViewAdapter = habitList;
+            habitListRecyclerView.setAdapter(habitListRecyclerViewAdapter);
+        }
+        habitList.sort();
         habitListRecyclerView.setVisibility(View.VISIBLE);
     }
 
