@@ -47,7 +47,7 @@ public class NotificationScheduler {
 
         // TODO: Move this setting somewhere else
         // 11PM!
-        while (nowTime.getHour() != 22) {
+        while (nowTime.getHour() != 23) {
             nowTime = nowTime.plusHours(1);
         }
 

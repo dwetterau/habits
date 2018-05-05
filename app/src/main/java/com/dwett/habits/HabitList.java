@@ -71,7 +71,9 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
                     Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
                     if (!HabitLogic.shouldAllowDone(thisHabit, events)) {
                         // Habit is finished, re-sort!
-                        thisList.sort();
+                        if (!thisList.sort()) {
+                            thisList.notifyHabitUpdated(thisHabit);
+                        }
                     } else {
                         thisList.notifyHabitUpdated(thisHabit);
                     }
@@ -114,7 +116,8 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         return this.habits.size();
     }
 
-    public void sort() {
+    // Returns whether or not the list was refreshed
+    public boolean sort() {
         long[] originalIDOrder = new long[habits.size()];
         final Map<Long, Boolean> idToIsDone = new HashMap<>(habits.size());
         int i = 0;
@@ -154,9 +157,10 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         for (Habit h : habits) {
             if (h.id != originalIDOrder[i++]) {
                 this.notifyItemRangeChanged(0, this.habits.size());
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     static class HabitHolder extends RecyclerView.ViewHolder {

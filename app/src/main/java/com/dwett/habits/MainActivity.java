@@ -185,6 +185,13 @@ public class MainActivity extends AppCompatActivity {
                     // Default to once / period
                     h.frequency = 1;
                 }
+
+                // Error out on empty title habits
+                if (h.title.length() == 0) {
+                    habitCreateTextInput.setError("Habits must have a title");
+                    return;
+                }
+
                 h.id = db.habitDao().insertNewHabit(h);
                 habitList.addHabit(h);
                 habitCreateTextInput.setText("");
@@ -289,7 +296,13 @@ public class MainActivity extends AppCompatActivity {
 
     private void hideManageHabits() {
         // Reset the editing stuff when we navigate away
-        this.setHabitToEdit(null, null);
+        if (this.habitToEdit != null) {
+            // Also update the habit we might have edited because we've maybe changed the set of
+            // events
+            habitList.notifyHabitUpdated(habitToEdit);
+            habitList.sort();
+            this.setHabitToEdit(null, null);
+        }
 
         if (manageHabitView != null) {
             AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
