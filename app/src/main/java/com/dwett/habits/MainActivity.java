@@ -79,6 +79,9 @@ public class MainActivity extends AppCompatActivity {
         notificationManager.createNotificationChannel(channel);
 
         NotificationScheduler.scheduleAlarm(this, AlarmReceiver.class);
+
+        // Clear out any notifications that already exist
+        notificationManager.cancel(NotificationScheduler.REMINDER_REQUEST_CODE);
     }
 
     private void setHabitToEdit(Habit h, Event[] events) {
