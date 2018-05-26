@@ -32,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
 
     private HabitList habitList;
     private RecyclerView habitListRecyclerView;
+    private RecyclerView summaryRecyclerView;
     private HabitDatabase db;
 
     private View manageHabitView;
@@ -112,16 +113,18 @@ public class MainActivity extends AppCompatActivity {
         switch (item) {
             case R.id.navigation_summary:
                 this.hideManageHabits();
-                // TODO build a summary view and inflate it here
-                this.inflateHabitList();
+                this.hideHabitList();
+                this.inflateSummaryView();
                 break;
             case R.id.navigation_habits:
                 this.hideManageHabits();
+                this.hideSummaryView();
                 // Inflate the habit list view
                 this.inflateHabitList();
                 break;
             case R.id.navigation_manage:
                 this.hideHabitList();
+                this.hideSummaryView();
                 // Inflate the view to create habits
                 this.inflateManageHabits();
                 break;
@@ -148,6 +151,27 @@ public class MainActivity extends AppCompatActivity {
 
     private void hideHabitList() {
         habitListRecyclerView.setVisibility(View.INVISIBLE);
+    }
+
+    private void inflateSummaryView() {
+        summaryRecyclerView = findViewById(R.id.summary_recycler_view);
+        RecyclerView.LayoutManager summaryRecyclerViewLayoutManager = new LinearLayoutManager(this);
+        summaryRecyclerView.setLayoutManager(summaryRecyclerViewLayoutManager);
+        RecyclerView.Adapter summaryViewAdapter = new Summary(this.db);
+        summaryRecyclerView.setAdapter(summaryViewAdapter);
+        summaryRecyclerView.setVisibility(View.VISIBLE);
+        summaryRecyclerView.post(new Runnable() {
+            @Override
+            public void run() {
+                summaryRecyclerView.scrollToPosition(0);
+            }
+        });
+    }
+
+    private void hideSummaryView() {
+        if (summaryRecyclerView != null) {
+            summaryRecyclerView.setVisibility(View.INVISIBLE);
+        }
     }
 
     private void inflateManageHabits() {
@@ -192,6 +216,12 @@ public class MainActivity extends AppCompatActivity {
                 // Error out on empty title habits
                 if (h.title.length() == 0) {
                     habitCreateTextInput.setError("Habits must have a title");
+                    return;
+                }
+                if (h.period != 7 * 24) {
+                    // TODO: Make this error on something sane, remove the field from the
+                    // UI once I'm sure it's useless
+                    habitCreateTextInput.setError("Only weekly habits supported");
                     return;
                 }
 
