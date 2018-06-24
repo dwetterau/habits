@@ -138,12 +138,11 @@ public class MainActivity extends AppCompatActivity {
         boolean firstInitialization = habitListRecyclerView == null;
         if (firstInitialization) {
             habitListRecyclerView = findViewById(R.id.habit_list_recycler_view);
-            // TODO Why?
             habitListRecyclerView.setHasFixedSize(true);
-            RecyclerView.LayoutManager habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
-            habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
             RecyclerView.Adapter habitListRecyclerViewAdapter = habitList;
             habitListRecyclerView.setAdapter(habitListRecyclerViewAdapter);
+            RecyclerView.LayoutManager habitListRecyclerViewLayoutManager = new LinearLayoutManager(this);
+            habitListRecyclerView.setLayoutManager(habitListRecyclerViewLayoutManager);
         }
         habitList.sort();
         habitListRecyclerView.setVisibility(View.VISIBLE);
@@ -155,10 +154,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void inflateSummaryView() {
         summaryRecyclerView = findViewById(R.id.summary_recycler_view);
-        RecyclerView.LayoutManager summaryRecyclerViewLayoutManager = new LinearLayoutManager(this);
-        summaryRecyclerView.setLayoutManager(summaryRecyclerViewLayoutManager);
         RecyclerView.Adapter summaryViewAdapter = new Summary(this.db);
         summaryRecyclerView.setAdapter(summaryViewAdapter);
+        RecyclerView.LayoutManager summaryRecyclerViewLayoutManager = new LinearLayoutManager(this);
+        summaryRecyclerView.setLayoutManager(summaryRecyclerViewLayoutManager);
         summaryRecyclerView.setVisibility(View.VISIBLE);
         summaryRecyclerView.post(new Runnable() {
             @Override
@@ -239,11 +238,12 @@ public class MainActivity extends AppCompatActivity {
         });
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
+        EventList events = new EventList(new Event[]{}, db, getFragmentManager());
+        eventListRecyclerView.setAdapter(events);
         RecyclerView.LayoutManager eventListRecyclerViewLayoutManager = new LinearLayoutManager(
                 manageHabitView.getContext()
         );
         eventListRecyclerView.setLayoutManager(eventListRecyclerViewLayoutManager);
-        eventListRecyclerView.setAdapter(new EventList(new Event[]{}, db, getFragmentManager()));
 
         if (habitToEdit != null) {
             // TODO Populate other fields to edit too!
@@ -314,10 +314,17 @@ public class MainActivity extends AppCompatActivity {
             Arrays.sort(eventsForHabitToEdit, new Comparator<Event>() {
                 @Override
                 public int compare(Event e1, Event e2) {
-                    return (int) (e2.timestamp - e1.timestamp);
+                    long r = (e2.timestamp - e1.timestamp);
+                    // Clamp the long instead of casting it
+                    if (r < 0) {
+                        return -1;
+                    } else if (r > 0) {
+                        return 1;
+                    }
+                    return 0;
                 }
             });
-            eventListRecyclerView.setAdapter(new EventList(eventsForHabitToEdit, db, getFragmentManager()));
+            events.addAll(eventsForHabitToEdit);
         } else {
             habitDeleteButton.setVisibility(View.INVISIBLE);
         }

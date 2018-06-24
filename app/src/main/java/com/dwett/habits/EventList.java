@@ -100,13 +100,11 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
                 ).show();
             }
         });
-
-        // TODO: Listeners for editing the date / time of the event
     }
 
-    public void addEvent(Event e) {
-        this.events.add(e);
-        this.notifyItemInserted(this.getItemCount() - 1);
+    public void addAll(Event[] events) {
+        this.events.addAll(Arrays.asList(events));
+        this.notifyDataSetChanged();
     }
 
     public void removeEvent(int index) {
