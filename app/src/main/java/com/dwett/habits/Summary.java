@@ -21,9 +21,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
 
@@ -122,10 +124,18 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
             }
         });
 
-        // Iterate through the events, compute the summary week
+        // Iterate through the events, compute the summary week and the start and end week for each
+        // habit
+        Map<Long, String> habitIdToStartWeek = new HashMap<>(allHabits.size());
+        Map<Long, String> habitIdToEndWeek = new HashMap<>(allHabits.size());
         List<String> summaryWeeks = new LinkedList<>();
         for (Event e : allEvents) {
             String summaryWeek = summaryWeekFromEvent(e);
+            if (!habitIdToStartWeek.containsKey(e.habitId)) {
+                habitIdToStartWeek.put(e.habitId, summaryWeek);
+            }
+            habitIdToEndWeek.put(e.habitId, summaryWeek);
+
             if (summaryWeeks.size() == 0 ||
                     !summaryWeeks.get(summaryWeeks.size() - 1).equals(summaryWeek)) {
                 summaryWeeks.add(summaryWeek);
@@ -133,11 +143,26 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         }
 
         // Now we finish populating everything
+        Set<Long> startedHabits = new HashSet<>(allHabits.size());
+        Set<Long> endedHabits = new HashSet<>(allHabits.size());
         LinkedList<WeeklySummary> summaries = new LinkedList<>();
         for (String summaryWeek : summaryWeeks) {
             WeeklySummary toAdd = new WeeklySummary(summaryWeek);
             for (Habit h: allHabits) {
-                toAdd.addSummaryForHabit(h, habitIdToEvent.get(h.id));
+
+                if (habitIdToStartWeek.get(h.id).equals(summaryWeek)) {
+                    startedHabits.add(h.id);
+                }
+                boolean justEnded = false;
+                if (habitIdToEndWeek.get(h.id).equals(summaryWeek)) {
+                    justEnded = true;
+                    endedHabits.add(h.id);
+                }
+
+                // Only add a summary if this is after the start week or before or equal the end week
+                if (startedHabits.contains(h.id) && (!endedHabits.contains(h.id) || justEnded)) {
+                    toAdd.addSummaryForHabit(h, habitIdToEvent.get(h.id));
+                }
             }
             summaries.addFirst(toAdd);
         }
