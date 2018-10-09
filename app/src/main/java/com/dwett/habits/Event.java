@@ -5,6 +5,10 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.PrimaryKey;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+
 @Entity(foreignKeys = @ForeignKey(
         entity = Habit.class,
         parentColumns = "id",
@@ -23,4 +27,16 @@ public class Event {
      */
     @ColumnInfo(name = "timestamp")
     long timestamp;
+
+    public void maybeAdjustTimestampToPreviousDay() {
+        // If the time is between midnight and 3am, we want to record it for the
+        // previous day at 11:59pm instead.
+        LocalDateTime dt = Instant.ofEpochMilli(this.timestamp)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        if (dt.getHour() < 3) {
+            dt = dt.minusHours(1);
+            this.timestamp = dt.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
+        }
+    }
 }

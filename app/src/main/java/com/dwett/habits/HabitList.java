@@ -8,6 +8,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -66,6 +69,8 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
                     event.habitId = thisHabit.id;
 
                     event.timestamp = System.currentTimeMillis();
+                    event.maybeAdjustTimestampToPreviousDay();
+
                     db.habitDao().insertNewEvent(event);
 
                     Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
@@ -177,7 +182,5 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
             editButton = itemView.findViewById(R.id.habit_edit_button);
             doneButton = itemView.findViewById(R.id.habit_done_button);
         }
-
-        // TODO: Add listeners?
     }
 }
