@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -14,6 +15,7 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
@@ -23,6 +25,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.Switch;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -39,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
 
     private Habit habitToEdit;
     private Event[] eventsForHabitToEdit;
+    private habitEditor habitEditor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,11 +54,15 @@ public class MainActivity extends AppCompatActivity {
                 HabitDatabase.class,
                 "habits"
         )
+                .addMigrations(Migrations.MIGRATION_1_2)
                 // TODO(davidw): Remove this!
                 .allowMainThreadQueries()
                 .build();
 
-        habitList = new HabitList(db.habitDao().loadAllHabits(), db, new habitEditor(this));
+        this.habitEditor = new habitEditor(this);
+        Habit[] allHabits = db.habitDao().loadAllHabits();
+        allHabits = Arrays.stream(allHabits).filter(h -> !h.archived).toArray(Habit[]::new);
+        habitList = new HabitList(allHabits, db, this.habitEditor);
         habitList.sort();
 
         BottomNavigationView navigation = findViewById(R.id.navigation);
@@ -154,7 +162,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void inflateSummaryView() {
         summaryRecyclerView = findViewById(R.id.summary_recycler_view);
-        RecyclerView.Adapter summaryViewAdapter = new Summary(this.db);
+        RecyclerView.Adapter summaryViewAdapter = new Summary(this.db, this.habitEditor);
         summaryRecyclerView.setAdapter(summaryViewAdapter);
         RecyclerView.LayoutManager summaryRecyclerViewLayoutManager = new LinearLayoutManager(this);
         summaryRecyclerView.setLayoutManager(summaryRecyclerViewLayoutManager);
@@ -183,7 +191,6 @@ public class MainActivity extends AppCompatActivity {
             manageHabitView.setVisibility(View.VISIBLE);
         }
 
-        final Button habitDeleteButton = manageHabitView.findViewById(R.id.habit_delete_button);
         Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
         habitCreateButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -245,11 +252,13 @@ public class MainActivity extends AppCompatActivity {
         );
         eventListRecyclerView.setLayoutManager(eventListRecyclerViewLayoutManager);
 
+        final Button habitDeleteButton = manageHabitView.findViewById(R.id.habit_delete_button);
         if (habitToEdit != null) {
             // TODO Populate other fields to edit too!
             AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
             EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
             RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+            Switch habitArchiveSwitch = manageHabitView.findViewById(R.id.habit_archive_switch);
 
             habitCreateTextInput.setText(habitToEdit.title);
             habitCreateFrequencyInput.setText(Integer.toString(habitToEdit.frequency));
@@ -258,6 +267,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (habitToEdit.period == 7 * 24) {
                 habitCreatePeriodRadioGroup.check(R.id.weekly_radio_button);
             }
+            habitArchiveSwitch.setChecked(habitToEdit.archived);
 
             habitCreateButton.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -265,6 +275,7 @@ public class MainActivity extends AppCompatActivity {
                     AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
                     EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
                     RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+                    Switch habitArchiveSwitch = manageHabitView.findViewById(R.id.habit_archive_switch);
 
                     if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.daily_radio_button) {
                         habitToEdit.period = 24;
@@ -278,6 +289,15 @@ public class MainActivity extends AppCompatActivity {
                     if (frequencyString.length() > 0) {
                         habitToEdit.frequency = Integer.parseInt(frequencyString);
                     }
+                    boolean skipNotify = false;
+                    if (habitArchiveSwitch.isChecked() && !habitToEdit.archived) {
+                        habitToEdit.archived = true;
+                        habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
+                    } else if (habitToEdit.archived){
+                        habitToEdit.archived = false;
+                        habitList.addHabit(habitToEdit);
+                    }
+
                     db.habitDao().updateHabit(habitToEdit);
                     habitList.notifyHabitUpdated(habitToEdit);
 
@@ -286,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
                     in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
                 }
             });
+
             habitDeleteButton.setVisibility(View.VISIBLE);
             final AlertDialog.Builder deleteConfirmer = new AlertDialog.Builder(manageHabitView.getContext())
                     .setTitle("Confirm habit deletion")

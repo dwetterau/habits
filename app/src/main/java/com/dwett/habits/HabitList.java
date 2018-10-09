@@ -113,7 +113,13 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
     }
 
     public void notifyHabitUpdated(Habit h) {
-         this.notifyItemChanged(this.getHabitIndex(h));
+        try {
+            this.getHabitIndex(h);
+        } catch (RuntimeException e) {
+            // Whatever, just don't blow up.
+            return;
+        }
+        this.notifyItemChanged(this.getHabitIndex(h));
     }
 
     @Override

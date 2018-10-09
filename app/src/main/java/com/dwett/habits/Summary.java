@@ -2,6 +2,7 @@ package com.dwett.habits;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,14 +27,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
 
     private HabitDatabase db;
+    private Consumer<Pair<Habit, Event[]>> editHabitCallback;
     private LinkedList<WeeklySummary> summaries;
 
-    public Summary(HabitDatabase db) {
+    public Summary(HabitDatabase db,  Consumer<Pair<Habit, Event[]>> editHabitCallback) {
+        this.db = db;
         this.summaries = computeSummaries(db);
+        this.editHabitCallback = editHabitCallback;
     }
 
     @Override
@@ -103,26 +108,18 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         }
 
         // Sort all the events by time
-        Collections.sort(allEvents, new Comparator<Event>() {
-            @Override
-            public int compare(Event o1, Event o2) {
-                if (o1.timestamp > o2.timestamp) {
-                    return 1;
-                }
-                if (o1.timestamp < o2.timestamp) {
-                    return -1;
-                }
-                return 0;
+        Collections.sort(allEvents, (o1, o2) -> {
+            if (o1.timestamp > o2.timestamp) {
+                return 1;
             }
+            if (o1.timestamp < o2.timestamp) {
+                return -1;
+            }
+            return 0;
         });
 
         // Sort all the habits so that higher frequency ones are first
-        Collections.sort(allHabits, new Comparator<Habit>() {
-            @Override
-            public int compare(Habit o1, Habit o2) {
-                return o2.frequency - o1.frequency;
-            }
-        });
+        Collections.sort(allHabits, (o1, o2) -> o2.frequency - o1.frequency);
 
         // Iterate through the events, compute the summary week and the start and end week for each
         // habit
@@ -161,7 +158,12 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
 
                 // Only add a summary if this is after the start week or before or equal the end week
                 if (startedHabits.contains(h.id) && (!endedHabits.contains(h.id) || justEnded)) {
-                    toAdd.addSummaryForHabit(h, habitIdToEvent.get(h.id));
+                    // Omit entries for archived habits if they have no events for the week.
+                    Event[] events = habitIdToEvent.get(h.id);
+                    if (events.length == 0 && h.archived) {
+                        continue;
+                    }
+                    toAdd.addSummaryForHabit(h, events);
                 }
             }
             summaries.addFirst(toAdd);
@@ -199,10 +201,12 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
     }
 
     static class HabitSummary {
+        private long id;
         private String title;
         private float progress;
 
         HabitSummary(Habit h, Event[] events, String curWeek) {
+            this.id = h.id;
             this.progress = 0.0f;
             for (Event e : events) {
                 String week = summaryWeekFromEvent(e);
@@ -239,6 +243,15 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
             ProgressBar progressBar = rowView.findViewById(R.id.summary_habit_progress);
             int progress = Math.round(summaries[position].progress * 100);
             progressBar.setProgress(progress);
+
+            final long id = summaries[position].id;
+            rowView.setOnClickListener(v -> {
+                Habit habit = db.habitDao().loadHabit(id);
+                Event[] events = db.habitDao().loadEventsForHabit(id);
+
+                // Go to the tab to edit the habit.timestamp
+                editHabitCallback.accept(new Pair<>(habit, events));
+            });
 
             return rowView;
         }

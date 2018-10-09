@@ -80,20 +80,20 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="8dp"
         android:text="Delete"
         app:layout_constraintEnd_toStartOf="@+id/habit_create_button"
-        app:layout_constraintTop_toBottomOf="@+id/habit_frequency_input" />
+        app:layout_constraintTop_toBottomOf="@+id/habit_archive_switch" />
 
     <Button
         android:id="@+id/habit_create_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="8dp"
         android:text="Save"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/habit_frequency_input" />
+        app:layout_constraintTop_toBottomOf="@+id/habit_archive_switch" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/event_list_recycler_view"
@@ -104,5 +104,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/habit_create_button" />
+
+    <Switch
+        android:id="@+id/habit_archive_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        android:checked="false"
+        android:text="Archived"
+        app:layout_constraintEnd_toStartOf="@+id/habit_create_button"
+        app:layout_constraintTop_toBottomOf="@+id/habit_frequency_input" />
 
 </android.support.constraint.ConstraintLayout>

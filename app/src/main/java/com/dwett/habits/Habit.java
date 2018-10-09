@@ -25,4 +25,10 @@ class Habit {
      */
     @ColumnInfo(name = "frequency")
     int frequency;
+
+    /**
+     * If true, the habit is hidden from the UI, but still exists.
+     */
+    @ColumnInfo(name = "archived_2")
+    boolean archived;
 }

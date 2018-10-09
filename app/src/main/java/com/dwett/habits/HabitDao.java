@@ -29,6 +29,9 @@ public interface HabitDao {
     @Query("SELECT * FROM habit")
     Habit[] loadAllHabits();
 
+    @Query("SELECT * FROM habit WHERE id = :habitId")
+    Habit loadHabit(long habitId);
+
     @Query("SELECT * FROM event where habit_id = :habitId")
     Event[] loadEventsForHabit(long habitId);
 }
