@@ -35,7 +35,8 @@ public class Event {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
         if (dt.getHour() < 3) {
-            dt = dt.minusHours(1);
+            dt = dt.minusHours(dt.getHour() + 1);
+            dt = dt.plusMinutes(59 - dt.getMinute());
             this.timestamp = dt.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
         }
     }

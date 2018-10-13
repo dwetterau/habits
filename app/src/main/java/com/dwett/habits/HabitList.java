@@ -8,9 +8,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
@@ -48,40 +45,34 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
         holder.description.setText(HabitLogic.getDescription(thisHabit, events));
 
-        holder.editButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
-                Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
+        holder.editButton.setOnClickListener(v -> {
+            Habit thisHabit12 = thisList.habits.get(holder.getAdapterPosition());
+            Event[] events12 = db.habitDao().loadEventsForHabit(thisHabit12.id);
 
-                // Go to the tab to edit the habit.timestamp
-                editHabitCallback.accept(new Pair<>(thisHabit, events));
-            }
+            // Go to the tab to edit the habit.timestamp
+            editHabitCallback.accept(new Pair<>(thisHabit12, events12));
         });
 
         if (HabitLogic.shouldAllowDone(thisHabit, events)) {
-            holder.doneButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Event event = new Event();
+            holder.doneButton.setOnClickListener(v -> {
+                Event event = new Event();
 
-                    Habit thisHabit = thisList.habits.get(holder.getAdapterPosition());
-                    event.habitId = thisHabit.id;
+                Habit thisHabit1 = thisList.habits.get(holder.getAdapterPosition());
+                event.habitId = thisHabit1.id;
 
-                    event.timestamp = System.currentTimeMillis();
-                    event.maybeAdjustTimestampToPreviousDay();
+                event.timestamp = System.currentTimeMillis();
+                event.maybeAdjustTimestampToPreviousDay();
 
-                    db.habitDao().insertNewEvent(event);
+                db.habitDao().insertNewEvent(event);
 
-                    Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
-                    if (!HabitLogic.shouldAllowDone(thisHabit, events)) {
-                        // Habit is finished, re-sort!
-                        if (!thisList.sort()) {
-                            thisList.notifyHabitUpdated(thisHabit);
-                        }
-                    } else {
-                        thisList.notifyHabitUpdated(thisHabit);
+                Event[] events1 = db.habitDao().loadEventsForHabit(thisHabit1.id);
+                if (!HabitLogic.shouldAllowDone(thisHabit1, events1)) {
+                    // Habit is finished, re-sort!
+                    if (!thisList.sort()) {
+                        thisList.notifyHabitUpdated(thisHabit1);
                     }
+                } else {
+                    thisList.notifyHabitUpdated(thisHabit1);
                 }
             });
             holder.doneButton.setEnabled(true);
