@@ -4,10 +4,8 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.arch.persistence.room.PrimaryKey;
 import android.arch.persistence.room.Room;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
@@ -15,7 +13,6 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.util.Pair;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,7 +25,6 @@ import android.widget.RadioGroup;
 import android.widget.Switch;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.function.Consumer;
 
 public class MainActivity extends AppCompatActivity {
@@ -167,12 +163,7 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView.LayoutManager summaryRecyclerViewLayoutManager = new LinearLayoutManager(this);
         summaryRecyclerView.setLayoutManager(summaryRecyclerViewLayoutManager);
         summaryRecyclerView.setVisibility(View.VISIBLE);
-        summaryRecyclerView.post(new Runnable() {
-            @Override
-            public void run() {
-                summaryRecyclerView.scrollToPosition(0);
-            }
-        });
+        summaryRecyclerView.post(() -> summaryRecyclerView.scrollToPosition(0));
     }
 
     private void hideSummaryView() {
@@ -192,56 +183,46 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
-        habitCreateButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Habit h = new Habit();
-                AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
-                EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
-                RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
+        habitCreateButton.setOnClickListener(v -> {
+            Habit h = new Habit();
+            AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
+            EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
 
-                if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.daily_radio_button) {
-                    h.period = 24;
-                } else if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.weekly_radio_button) {
-                    h.period = 7 * 24;
-                } else {
-                    // Default to weekly
-                    h.period = 7 * 24;
-                }
+            // Default to weekly
+            h.period = 7 * 24;
 
-                h.title = habitCreateTextInput.getText().toString();
+            h.title = habitCreateTextInput.getText().toString();
 
-                String frequencyString = habitCreateFrequencyInput.getText().toString();
-                if (frequencyString.length() > 0) {
-                    h.frequency = Integer.parseInt(frequencyString);
-                } else {
-                    // Default to once / period
-                    h.frequency = 1;
-                }
-
-                // Error out on empty title habits
-                if (h.title.length() == 0) {
-                    habitCreateTextInput.setError("Habits must have a title");
-                    return;
-                }
-                if (h.period != 7 * 24) {
-                    // TODO: Make this error on something sane, remove the field from the
-                    // UI once I'm sure it's useless
-                    habitCreateTextInput.setError("Only weekly habits supported");
-                    return;
-                }
-
-                h.id = db.habitDao().insertNewHabit(h);
-                habitList.addHabit(h);
-                habitCreateTextInput.setText("");
-                habitCreateFrequencyInput.setText("");
-
-                // Close the keyboard hackily?
-                InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
-
-                // TODO: Navigate to the habits page?
+            String frequencyString = habitCreateFrequencyInput.getText().toString();
+            if (frequencyString.length() > 0) {
+                h.frequency = Integer.parseInt(frequencyString);
+            } else {
+                // Default to once / period
+                h.frequency = 1;
             }
+
+            // Error out on empty title habits
+            if (h.title.length() == 0) {
+                habitCreateTextInput.setError("Habits must have a title");
+                return;
+            }
+            if (h.period != 7 * 24) {
+                // TODO: Make this error on something sane, remove the field from the
+                // UI once I'm sure it's useless
+                habitCreateTextInput.setError("Only weekly habits supported");
+                return;
+            }
+
+            h.id = db.habitDao().insertNewHabit(h);
+            habitList.addHabit(h);
+            habitCreateTextInput.setText("");
+            habitCreateFrequencyInput.setText("");
+
+            // Close the keyboard hackily?
+            InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
+
+            // TODO: Navigate to the habits page?
         });
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
@@ -253,101 +234,70 @@ public class MainActivity extends AppCompatActivity {
         eventListRecyclerView.setLayoutManager(eventListRecyclerViewLayoutManager);
 
         final Button habitDeleteButton = manageHabitView.findViewById(R.id.habit_delete_button);
+        final Switch habitArchiveSwitch = manageHabitView.findViewById(R.id.habit_archive_switch);
+        final AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
+        final EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
         if (habitToEdit != null) {
-            // TODO Populate other fields to edit too!
-            AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
-            EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
-            RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
-            Switch habitArchiveSwitch = manageHabitView.findViewById(R.id.habit_archive_switch);
-
             habitCreateTextInput.setText(habitToEdit.title);
             habitCreateFrequencyInput.setText(Integer.toString(habitToEdit.frequency));
-            if (habitToEdit.period == 24) {
-                habitCreatePeriodRadioGroup.check(R.id.daily_radio_button);
-            } else if (habitToEdit.period == 7 * 24) {
-                habitCreatePeriodRadioGroup.check(R.id.weekly_radio_button);
-            }
             habitArchiveSwitch.setChecked(habitToEdit.archived);
 
-            habitCreateButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
-                    EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
-                    RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
-                    Switch habitArchiveSwitch = manageHabitView.findViewById(R.id.habit_archive_switch);
+            habitCreateButton.setOnClickListener(v -> {
 
-                    if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.daily_radio_button) {
-                        habitToEdit.period = 24;
-                    } else if (habitCreatePeriodRadioGroup.getCheckedRadioButtonId() == R.id.weekly_radio_button) {
-                        habitToEdit.period = 7 * 24;
-                    }
+                habitToEdit.period = 7 * 24;
+                habitToEdit.title = habitCreateTextInput.getText().toString();
 
-                    habitToEdit.title = habitCreateTextInput.getText().toString();
-
-                    String frequencyString = habitCreateFrequencyInput.getText().toString();
-                    if (frequencyString.length() > 0) {
-                        habitToEdit.frequency = Integer.parseInt(frequencyString);
-                    }
-                    boolean skipNotify = false;
-                    if (habitArchiveSwitch.isChecked() && !habitToEdit.archived) {
-                        habitToEdit.archived = true;
-                        habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
-                    } else if (habitToEdit.archived){
-                        habitToEdit.archived = false;
-                        habitList.addHabit(habitToEdit);
-                    }
-
-                    db.habitDao().updateHabit(habitToEdit);
-                    habitList.notifyHabitUpdated(habitToEdit);
-
-                    // Close the keyboard hackily?
-                    InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
+                String frequencyString = habitCreateFrequencyInput.getText().toString();
+                if (frequencyString.length() > 0) {
+                    habitToEdit.frequency = Integer.parseInt(frequencyString);
                 }
+                if (habitArchiveSwitch.isChecked() && !habitToEdit.archived) {
+                    habitToEdit.archived = true;
+                    habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
+                } else if (habitToEdit.archived){
+                    habitToEdit.archived = false;
+                    habitList.addHabit(habitToEdit);
+                }
+
+                db.habitDao().updateHabit(habitToEdit);
+                habitList.notifyHabitUpdated(habitToEdit);
+
+                // Close the keyboard hackily?
+                InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
             });
 
+            habitArchiveSwitch.setVisibility(View.VISIBLE);
             habitDeleteButton.setVisibility(View.VISIBLE);
             final AlertDialog.Builder deleteConfirmer = new AlertDialog.Builder(manageHabitView.getContext())
                     .setTitle("Confirm habit deletion")
                     .setMessage("Do you really want to delete this habit?")
                     .setNegativeButton(android.R.string.no, null);
 
-            habitDeleteButton.setOnClickListener(new Button.OnClickListener() {
-
-                @Override
-                public void onClick(View v) {
-                    deleteConfirmer.setPositiveButton(
-                            android.R.string.yes,
-                            new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    db.habitDao().deleteHabit(habitToEdit);
-                                    habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
-                                    habitToEdit = null;
-                                    eventsForHabitToEdit = null;
-                                }
-                            }
-                    ).show();
-                }
-            });
-
-            Arrays.sort(eventsForHabitToEdit, new Comparator<Event>() {
-                @Override
-                public int compare(Event e1, Event e2) {
-                    long r = (e2.timestamp - e1.timestamp);
-                    // Clamp the long instead of casting it
-                    if (r < 0) {
-                        return -1;
-                    } else if (r > 0) {
-                        return 1;
+            habitDeleteButton.setOnClickListener(v -> deleteConfirmer.setPositiveButton(
+                    android.R.string.yes,
+                    (dialog, which) -> {
+                        db.habitDao().deleteHabit(habitToEdit);
+                        habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
+                        habitToEdit = null;
+                        eventsForHabitToEdit = null;
                     }
-                    return 0;
+            ).show());
+
+            Arrays.sort(eventsForHabitToEdit, (e1, e2) -> {
+                long r = (e2.timestamp - e1.timestamp);
+                // Clamp the long instead of casting it
+                if (r < 0) {
+                    return -1;
+                } else if (r > 0) {
+                    return 1;
                 }
+                return 0;
             });
             events.addAll(eventsForHabitToEdit);
         } else {
             habitDeleteButton.setVisibility(View.INVISIBLE);
+            habitArchiveSwitch.setVisibility(View.INVISIBLE);
         }
 
         if (firstInitialization) {
@@ -368,12 +318,10 @@ public class MainActivity extends AppCompatActivity {
         if (manageHabitView != null) {
             AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
             EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
-            RadioGroup habitCreatePeriodRadioGroup = manageHabitView.findViewById(R.id.habit_period_radio_group);
 
             // Restore defaults too
             habitCreateTextInput.setText("");
             habitCreateFrequencyInput.setText("");
-            habitCreatePeriodRadioGroup.check(R.id.weekly_radio_button);
 
             manageHabitView.setVisibility(View.INVISIBLE);
         }
