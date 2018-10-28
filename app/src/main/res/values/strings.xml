@@ -6,4 +6,6 @@
     <string name="channel_name">Habits</string>
     <string name="channel_description">For habit notifications</string>
     <string name="times_per_week">Times per week</string>
+    <string name="create_habit">Create</string>
+    <string name="save_habit">Save</string>
 </resources>

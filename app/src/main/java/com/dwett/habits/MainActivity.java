@@ -21,7 +21,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioGroup;
 import android.widget.Switch;
 
 import java.util.Arrays;
@@ -267,6 +266,7 @@ public class MainActivity extends AppCompatActivity {
                 in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
             });
 
+            habitCreateButton.setText(R.string.save_habit);
             habitArchiveSwitch.setVisibility(View.VISIBLE);
             habitDeleteButton.setVisibility(View.VISIBLE);
             final AlertDialog.Builder deleteConfirmer = new AlertDialog.Builder(manageHabitView.getContext())
@@ -298,6 +298,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             habitDeleteButton.setVisibility(View.INVISIBLE);
             habitArchiveSwitch.setVisibility(View.INVISIBLE);
+            habitCreateButton.setText(R.string.create_habit);
         }
 
         if (firstInitialization) {

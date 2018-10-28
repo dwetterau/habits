@@ -1,11 +1,16 @@
 package com.dwett.habits;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import java.util.Arrays;
@@ -44,6 +49,22 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
         holder.description.setText(HabitLogic.getDescription(thisHabit, events));
 
+
+        holder.progressBar.setProgress(HabitLogic.currentProgress(thisHabit, events));
+        if (HabitLogic.onTrack(thisHabit, events, 50)) {
+            holder.progressBar.setProgressTintList(
+                    ColorStateList.valueOf(
+                            holder.itemView.getContext().getColor(R.color.colorAccent)));
+        } else if (HabitLogic.onTrack(thisHabit, events, 30)) {
+            holder.progressBar.setProgressTintList(
+                    ColorStateList.valueOf(
+                            holder.itemView.getContext().getColor(R.color.yellow)));
+        } else {
+            holder.progressBar.setProgressTintList(
+                    ColorStateList.valueOf(
+                            holder.itemView.getContext().getColor(R.color.colorPrimary)));
+        }
+
         holder.itemView.setOnLongClickListener(v -> {
             Event[] events1= db.habitDao().loadEventsForHabit(thisHabit.id);
 
@@ -51,7 +72,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
             return true;
         });
 
-        if (HabitLogic.shouldAllowDone(thisHabit, events)) {
+        if (!HabitLogic.isDone(thisHabit, events)) {
             holder.doneButton.setOnClickListener(v -> {
                 Event event = new Event();
 
@@ -63,7 +84,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
                 db.habitDao().insertNewEvent(event);
 
                 Event[] events1 = db.habitDao().loadEventsForHabit(thisHabit.id);
-                if (!HabitLogic.shouldAllowDone(thisHabit, events1)) {
+                if (HabitLogic.isDone(thisHabit, events1)) {
                     // Habit is finished, re-sort!
                     if (!thisList.sort()) {
                         thisList.notifyHabitUpdated(thisHabit);
@@ -124,7 +145,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         int i = 0;
         for (Habit h : habits) {
             Event[] events = db.habitDao().loadEventsForHabit(h.id);
-            idToIsDone.put(h.id, !HabitLogic.shouldAllowDone(h, events));
+            idToIsDone.put(h.id, HabitLogic.isDone(h, events));
             originalIDOrder[i++] = h.id;
         }
         Collections.sort(this.habits, (o1, o2) -> {
@@ -165,12 +186,14 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         private TextView title;
         private TextView description;
         private Button doneButton;
+        private ProgressBar progressBar;
 
         HabitHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.habit_title);
             description = itemView.findViewById(R.id.habit_description);
             doneButton = itemView.findViewById(R.id.habit_done_button);
+            progressBar = itemView.findViewById(R.id.habit_progress);
         }
     }
 }

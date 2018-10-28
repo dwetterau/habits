@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 class HabitLogic {
@@ -22,8 +23,34 @@ class HabitLogic {
                 getPeriodName(h.period));
     }
 
-    static boolean shouldAllowDone(Habit h, Event[] events) {
-        return numEventsInCurrentPeriod(h, events) < h.frequency;
+    static boolean onTrack(Habit h, Event[] events, int percentBehindAllowed) {
+        LocalDateTime cur = LocalDateTime.now();
+        cur.minusSeconds(cur.getSecond());
+        cur.minusMinutes(cur.getMinute());
+        cur.minusHours(cur.getHour());
+
+        LocalDateTime start = periodStart(h);
+        long between = ChronoUnit.HOURS.between(start, cur);
+        int diff = (int) Math.round(((double)between / (double)h.period) * 100);
+        return diff - currentProgress(h, events) > percentBehindAllowed;
+    }
+
+    static boolean isDone(Habit h, Event[] events) {
+        return numEventsInCurrentPeriod(h, events) >= h.frequency;
+    }
+
+    /**
+     * @param h the habit
+     * @param events all relevant events for the habit
+     * @return a value in [0, 100] for the percent done the habit is in this period
+     */
+    static int currentProgress(Habit h, Event[] events) {
+        int n = numEventsInCurrentPeriod(h, events);
+        int val = Math.round(((float)n / (float)h.frequency) * 100);
+        if (val > 100) {
+            val = 100;
+        }
+        return val;
     }
 
     private static int numEventsInCurrentPeriod(Habit h, Event[] events) {
