@@ -10,7 +10,6 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -45,38 +44,38 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
         holder.description.setText(HabitLogic.getDescription(thisHabit, events));
 
-        holder.editButton.setOnClickListener(v -> {
-            Habit thisHabit12 = thisList.habits.get(holder.getAdapterPosition());
-            Event[] events12 = db.habitDao().loadEventsForHabit(thisHabit12.id);
+        holder.itemView.setOnLongClickListener(v -> {
+            Event[] events1= db.habitDao().loadEventsForHabit(thisHabit.id);
 
-            // Go to the tab to edit the habit.timestamp
-            editHabitCallback.accept(new Pair<>(thisHabit12, events12));
+            editHabitCallback.accept(new Pair<>(thisHabit, events1));
+            return true;
         });
 
         if (HabitLogic.shouldAllowDone(thisHabit, events)) {
             holder.doneButton.setOnClickListener(v -> {
                 Event event = new Event();
 
-                Habit thisHabit1 = thisList.habits.get(holder.getAdapterPosition());
-                event.habitId = thisHabit1.id;
+                event.habitId = thisHabit.id;
 
                 event.timestamp = System.currentTimeMillis();
                 event.maybeAdjustTimestampToPreviousDay();
 
                 db.habitDao().insertNewEvent(event);
 
-                Event[] events1 = db.habitDao().loadEventsForHabit(thisHabit1.id);
-                if (!HabitLogic.shouldAllowDone(thisHabit1, events1)) {
+                Event[] events1 = db.habitDao().loadEventsForHabit(thisHabit.id);
+                if (!HabitLogic.shouldAllowDone(thisHabit, events1)) {
                     // Habit is finished, re-sort!
                     if (!thisList.sort()) {
-                        thisList.notifyHabitUpdated(thisHabit1);
+                        thisList.notifyHabitUpdated(thisHabit);
                     }
                 } else {
-                    thisList.notifyHabitUpdated(thisHabit1);
+                    thisList.notifyHabitUpdated(thisHabit);
                 }
             });
+            holder.doneButton.setBackgroundResource(R.drawable.ic_check_black_24dp);
             holder.doneButton.setEnabled(true);
         } else {
+            holder.doneButton.setBackgroundResource(R.drawable.ic_check_primary_24dp);
             holder.doneButton.setEnabled(false);
         }
     }
@@ -128,30 +127,26 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
             idToIsDone.put(h.id, !HabitLogic.shouldAllowDone(h, events));
             originalIDOrder[i++] = h.id;
         }
-        Collections.sort(this.habits, new Comparator<Habit>() {
-
-            @Override
-            public int compare(Habit o1, Habit o2) {
-                boolean o1IsDone = idToIsDone.get(o1.id);
-                boolean o2IsDone = idToIsDone.get(o2.id);
-                if (o1IsDone && !o2IsDone) {
-                    return 1;
-                }
-                if (!o1IsDone && o2IsDone) {
-                    return -1;
-                }
-
-                // Sort events that have a lower period first (e.g. daily before weekly)
-                if (o1.period < o2.period) {
-                    return -1;
-                }
-                if (o1.period > o2.period) {
-                    return 1;
-                }
-
-                // Sort events that must be done more often first (e.g. twice daily before once)
-                return o2.frequency - o1.frequency;
+        Collections.sort(this.habits, (o1, o2) -> {
+            boolean o1IsDone = idToIsDone.get(o1.id);
+            boolean o2IsDone = idToIsDone.get(o2.id);
+            if (o1IsDone && !o2IsDone) {
+                return 1;
             }
+            if (!o1IsDone && o2IsDone) {
+                return -1;
+            }
+
+            // Sort events that have a lower period first (e.g. daily before weekly)
+            if (o1.period < o2.period) {
+                return -1;
+            }
+            if (o1.period > o2.period) {
+                return 1;
+            }
+
+            // Sort events that must be done more often first (e.g. twice daily before once)
+            return o2.frequency - o1.frequency;
         });
 
         // Only notify on change if we changed something...
@@ -169,14 +164,12 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
         private TextView title;
         private TextView description;
-        private Button editButton;
         private Button doneButton;
 
         HabitHolder(View itemView) {
             super(itemView);
             title = itemView.findViewById(R.id.habit_title);
             description = itemView.findViewById(R.id.habit_description);
-            editButton = itemView.findViewById(R.id.habit_edit_button);
             doneButton = itemView.findViewById(R.id.habit_done_button);
         }
     }
