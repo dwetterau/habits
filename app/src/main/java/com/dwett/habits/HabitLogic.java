@@ -10,7 +10,7 @@ import java.util.Locale;
 class HabitLogic {
 
     static Event[] loadEventsInCurrentPeriod(HabitDao hd, Habit h) {
-        long start = periodStart(h).atZone(ZoneId.systemDefault()).toEpochSecond();
+        long start = periodStart(h).atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
         return hd.loadEventsForHabitSince(h.id, start);
     }
 

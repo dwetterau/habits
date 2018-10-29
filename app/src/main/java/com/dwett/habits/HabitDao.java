@@ -40,4 +40,7 @@ public interface HabitDao {
 
     @Query("SELECT * FROM event WHERE habit_id = :habitId AND timestamp >= :timestamp")
     Event[] loadEventsForHabitSince(long habitId, long timestamp);
+
+    @Query("SELECT * FROM event WHERE timestamp >= :timestamp")
+    Event[] loadAllEventsSince(long timestamp);
 }

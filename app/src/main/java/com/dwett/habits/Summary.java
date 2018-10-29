@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
 
@@ -95,57 +97,73 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         }
     }
 
+    private static long getEventStartTimestampMillis() {
+        LocalDateTime start = LocalDateTime.now();
+        DayOfWeek today = start.getDayOfWeek();
+        while (today != DayOfWeek.MONDAY) {
+            start = start.minusDays(1);
+            today = start.getDayOfWeek();
+        }
+        start = start.minusHours(start.getHour());
+        start = start.minusMinutes(start.getMinute());
+        start = start.minusSeconds(start.getSecond());
+
+        // Only return 6 weeks back?
+        // TODO: add in some pagination
+        start = start.minusWeeks(6);
+        return start.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000;
+    }
+
     private static LinkedList<WeeklySummary> computeSummaries(HabitDatabase db) {
-        Map<Long, Event[]> habitIdToEvent = new HashMap<>();
-        List<Habit> allHabits = new ArrayList<>();
+        Map<Long, List<Event>> habitIDToEvent = new HashMap<>();
+        Map<Long, Habit> habitIDToHabit = new HashMap<>();
         List<Event> allEvents = new ArrayList<>();
         for (Habit h : db.habitDao().loadAllHabits()) {
-            Event[] events = db.habitDao().loadAllEventsForHabit(h.id);
-            habitIdToEvent.put(h.id, events);
-            allEvents.addAll(Arrays.asList(events));
-            allHabits.add(h);
+            habitIDToHabit.put(h.id, h);
+        }
+
+        for (Event e : db.habitDao().loadAllEventsSince(getEventStartTimestampMillis())) {
+            if (!habitIDToEvent.containsKey(e.habitId)) {
+                habitIDToEvent.put(e.habitId, new LinkedList<>());
+            }
+            habitIDToEvent.get(e.habitId).add(e);
+            allEvents.add(e);
         }
 
         // Sort all the events by time
-        Collections.sort(allEvents, (o1, o2) -> {
-            if (o1.timestamp > o2.timestamp) {
-                return 1;
-            }
-            if (o1.timestamp < o2.timestamp) {
-                return -1;
-            }
-            return 0;
-        });
-
-        // Sort all the habits so that higher frequency ones are first
-        Collections.sort(allHabits, (o1, o2) -> o2.frequency - o1.frequency);
+        Collections.sort(allEvents, Comparator.comparingLong(o -> o.timestamp));
 
         // Iterate through the events, compute the summary week and the start and end week for each
         // habit
-        Map<Long, String> habitIdToStartWeek = new HashMap<>(allHabits.size());
-        Map<Long, String> habitIdToEndWeek = new HashMap<>(allHabits.size());
-        List<String> summaryWeeks = new LinkedList<>();
+        Map<Long, String> habitIdToStartWeek = new HashMap<>(habitIDToHabit.size());
+        Map<Long, String> habitIdToEndWeek = new HashMap<>(habitIDToHabit.size());
+        Map<Long, String> eventIdToSummaryWeek = new HashMap<>(allEvents.size());
+        LinkedList<Habit> habitsWithEventsInPage = new LinkedList<>();
+        LinkedList<String> summaryWeeks = new LinkedList<>();
         for (Event e : allEvents) {
             String summaryWeek = summaryWeekFromEvent(e);
+            eventIdToSummaryWeek.put(e.id, summaryWeek);
+
             if (!habitIdToStartWeek.containsKey(e.habitId)) {
+                habitsWithEventsInPage.add(habitIDToHabit.get(e.habitId));
                 habitIdToStartWeek.put(e.habitId, summaryWeek);
             }
             habitIdToEndWeek.put(e.habitId, summaryWeek);
 
-            if (summaryWeeks.size() == 0 ||
-                    !summaryWeeks.get(summaryWeeks.size() - 1).equals(summaryWeek)) {
+            if (summaryWeeks.size() == 0 || !summaryWeeks.getLast().equals(summaryWeek)) {
                 summaryWeeks.add(summaryWeek);
             }
         }
+        // Sort all the habits so that higher frequency ones are first
+        Collections.sort(habitsWithEventsInPage, (o1, o2) -> o2.frequency - o1.frequency);
 
         // Now we finish populating everything
-        Set<Long> startedHabits = new HashSet<>(allHabits.size());
-        Set<Long> endedHabits = new HashSet<>(allHabits.size());
+        Set<Long> startedHabits = new HashSet<>(habitsWithEventsInPage.size());
+        Set<Long> endedHabits = new HashSet<>(habitsWithEventsInPage.size());
         LinkedList<WeeklySummary> summaries = new LinkedList<>();
         for (String summaryWeek : summaryWeeks) {
             WeeklySummary toAdd = new WeeklySummary(summaryWeek);
-            for (Habit h: allHabits) {
-
+            for (Habit h: habitsWithEventsInPage) {
                 if (habitIdToStartWeek.get(h.id).equals(summaryWeek)) {
                     startedHabits.add(h.id);
                 }
@@ -158,11 +176,17 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
                 // Only add a summary if this is after the start week or before or equal the end week
                 if (startedHabits.contains(h.id) && (!endedHabits.contains(h.id) || justEnded)) {
                     // Omit entries for archived habits if they have no events for the week.
-                    Event[] events = habitIdToEvent.get(h.id);
-                    if (events.length == 0 && h.archived) {
+                    List<Event> eventsInWeek = habitIDToEvent
+                            .getOrDefault(h.id, new LinkedList<>())
+                            .stream()
+                            .filter(
+                                (event) -> eventIdToSummaryWeek.get(event.id).equals(summaryWeek)
+                            )
+                            .collect(Collectors.toList());
+                    if (eventsInWeek.size() == 0 && h.archived) {
                         continue;
                     }
-                    toAdd.addSummaryForHabit(h, events);
+                    toAdd.addSummaryForHabit(h, eventsInWeek);
                 }
             }
             summaries.addFirst(toAdd);
@@ -194,8 +218,8 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
             this.habitSummaries = new LinkedList<>();
         }
 
-        public void addSummaryForHabit(Habit h, Event[] events) {
-            this.habitSummaries.addLast(new HabitSummary(h, events, this.weekTitle));
+        public void addSummaryForHabit(Habit h, List<Event> events) {
+            this.habitSummaries.addLast(new HabitSummary(h, events));
         }
     }
 
@@ -204,15 +228,10 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         private String title;
         private float progress;
 
-        HabitSummary(Habit h, Event[] events, String curWeek) {
+        HabitSummary(Habit h, List<Event> events) {
             this.id = h.id;
-            this.progress = 0.0f;
-            for (Event e : events) {
-                String week = summaryWeekFromEvent(e);
-                if (week.equals(curWeek)) {
-                    progress += 1.0f;
-                }
-            }
+            this.progress = (float) events.size();
+
             // Make progress a proportion of "done-ness" (0 means not, 1.0+ means done)
             progress /= h.frequency;
 
