@@ -17,6 +17,7 @@ An Android habit-tracking app
 ## Controls
 - Long press on a habit to enter the "edit" menu for it. This view will show a list of "events" for each habit.
 - Tap on an event's date or time to edit when it happened.
+- On the Summary page, you can tap an "archived" habit to un-archive it.
 
 ## Detailed Features
 - Ability to add, edit, archive, and delete habits with customizable frequency (per week)
