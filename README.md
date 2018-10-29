@@ -9,18 +9,19 @@ An Android habit-tracking app
 ## Privacy
 - This app never sends any of your data anywhere (currently, there are no network calls in the
   codebase!).
-- I will never add ads to this application or send your data anywhere.
-- If the app asks for an unexpected permission please submit a pull request! It should only ask
-  to store data locally and send you a reminder location (see TODO below to let this be diabled)
+- I will never add ads to this application.
+- I will never collect or send your data anywhere.
+- If the app asks for an unexpected permission please submit an issue! It should only ask
+  to store data locally and to send you a reminder location (see TODO below to let this be disabled).
 
 ## Controls
-- Long press on a habit to enter the "edit" menu for it.
+- Long press on a habit to enter the "edit" menu for it. This view will show a list of "events" for each habit.
 - Tap on an event's date or time to edit when it happened.
 
 ## Detailed Features
-- Ability to add, edit, delete habits with customizable frequency (per week)
+- Ability to add, edit, archive, and delete habits with customizable frequency (per week)
 - Daily push notification reminders to fill out habit status (currently at 11pm, see TODO below)
-- Summary view to track how your habit formation is going
+- Summary view to track your habit formation
 - Color-coded progress bars on habits to identify which ones you're behind on
 - Ability to archive habits after they've formed, or if you want to ignore them for now.
 - Ability to tweak all logged events (in case you forget or accidentally tap)
