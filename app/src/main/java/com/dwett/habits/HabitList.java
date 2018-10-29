@@ -178,6 +178,10 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         return false;
     }
 
+    public boolean isEmpty() {
+        return this.habits.size() == 0;
+    }
+
     static class HabitHolder extends RecyclerView.ViewHolder {
 
         private TextView title;

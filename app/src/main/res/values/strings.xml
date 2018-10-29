@@ -8,4 +8,5 @@
     <string name="times_per_week">Times per week</string>
     <string name="create_habit">Create</string>
     <string name="save_habit">Save</string>
+    <string name="no_habits_yet_tap_manage_to_add_some">No habits yet, tap \"Manage\" below and add some!</string>
 </resources>

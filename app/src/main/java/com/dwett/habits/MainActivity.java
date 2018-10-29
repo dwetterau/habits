@@ -22,6 +22,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -31,6 +32,7 @@ public class MainActivity extends AppCompatActivity {
     private HabitList habitList;
     private RecyclerView habitListRecyclerView;
     private RecyclerView summaryRecyclerView;
+    private TextView noHabitsWarningView;
     private HabitDatabase db;
 
     private View manageHabitView;
@@ -60,12 +62,7 @@ public class MainActivity extends AppCompatActivity {
         habitList.sort();
 
         BottomNavigationView navigation = findViewById(R.id.navigation);
-        navigation.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
-            @Override
-            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-                return inflateBasedOffMenuItem(item.getItemId());
-            }
-        });
+        navigation.setOnNavigationItemSelectedListener(item -> inflateBasedOffMenuItem(item.getItemId()));
         this.inflateBasedOffMenuItem(navigation.getSelectedItemId());
 
         // Set up the reminder
@@ -136,9 +133,26 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    private void maybeShowNoHabitWarning(boolean isEmpty) {
+        if (noHabitsWarningView == null) {
+            noHabitsWarningView = findViewById(R.id.no_habit_warning);
+        }
+        if (isEmpty) {
+            noHabitsWarningView.setVisibility(View.VISIBLE);
+        } else {
+            noHabitsWarningView.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    private void maybeHideNoHabitWarning() {
+        if (noHabitsWarningView == null) {
+            noHabitsWarningView = findViewById(R.id.no_habit_warning);
+        }
+        noHabitsWarningView.setVisibility(View.INVISIBLE);
+    }
+
     private void inflateHabitList() {
-        boolean firstInitialization = habitListRecyclerView == null;
-        if (firstInitialization) {
+        if (habitListRecyclerView == null) {
             habitListRecyclerView = findViewById(R.id.habit_list_recycler_view);
             habitListRecyclerView.setHasFixedSize(true);
             RecyclerView.Adapter habitListRecyclerViewAdapter = habitList;
@@ -148,10 +162,12 @@ public class MainActivity extends AppCompatActivity {
         }
         habitList.sort();
         habitListRecyclerView.setVisibility(View.VISIBLE);
+        maybeShowNoHabitWarning(habitList.isEmpty());
     }
 
     private void hideHabitList() {
         habitListRecyclerView.setVisibility(View.INVISIBLE);
+        maybeHideNoHabitWarning();
     }
 
     private void inflateSummaryView() {
@@ -162,12 +178,14 @@ public class MainActivity extends AppCompatActivity {
         summaryRecyclerView.setLayoutManager(summaryRecyclerViewLayoutManager);
         summaryRecyclerView.setVisibility(View.VISIBLE);
         summaryRecyclerView.post(() -> summaryRecyclerView.scrollToPosition(0));
+        maybeShowNoHabitWarning(summaryViewAdapter.getItemCount() == 0);
     }
 
     private void hideSummaryView() {
         if (summaryRecyclerView != null) {
             summaryRecyclerView.setVisibility(View.INVISIBLE);
         }
+        maybeHideNoHabitWarning();
     }
 
     private void inflateManageHabits() {
@@ -220,7 +238,10 @@ public class MainActivity extends AppCompatActivity {
             InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
             in.hideSoftInputFromWindow(habitCreateTextInput.getWindowToken(), 0);
 
-            // TODO: Navigate to the habits page?
+            // Let's also navigate away to the habits view
+            BottomNavigationView navigation = findViewById(R.id.navigation);
+            navigation.setSelectedItemId(R.id.navigation_habits);
+            inflateBasedOffMenuItem(R.id.navigation_habits);
         });
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
@@ -280,6 +301,11 @@ public class MainActivity extends AppCompatActivity {
                         habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
                         habitToEdit = null;
                         eventsForHabitToEdit = null;
+
+                        // Clear all the other state too by reloading this view
+                        habitCreateTextInput.setText("");
+                        habitCreateFrequencyInput.setText("");
+                        inflateManageHabits();
                     }
             ).show());
 
