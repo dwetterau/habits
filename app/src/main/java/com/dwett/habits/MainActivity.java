@@ -55,8 +55,7 @@ public class MainActivity extends AppCompatActivity {
                 .build();
 
         this.habitEditor = new habitEditor(this);
-        Habit[] allHabits = db.habitDao().loadAllHabits();
-        allHabits = Arrays.stream(allHabits).filter(h -> !h.archived).toArray(Habit[]::new);
+        Habit[] allHabits = db.habitDao().loadNonArchivedHabits();
         habitList = new HabitList(allHabits, db, this.habitEditor);
         habitList.sort();
 

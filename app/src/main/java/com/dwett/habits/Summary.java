@@ -20,7 +20,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -101,7 +100,7 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         List<Habit> allHabits = new ArrayList<>();
         List<Event> allEvents = new ArrayList<>();
         for (Habit h : db.habitDao().loadAllHabits()) {
-            Event[] events = db.habitDao().loadEventsForHabit(h.id);
+            Event[] events = db.habitDao().loadAllEventsForHabit(h.id);
             habitIdToEvent.put(h.id, events);
             allEvents.addAll(Arrays.asList(events));
             allHabits.add(h);
@@ -247,7 +246,7 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
             final long id = summaries[position].id;
             rowView.setOnClickListener(v -> {
                 Habit habit = db.habitDao().loadHabit(id);
-                Event[] events = db.habitDao().loadEventsForHabit(id);
+                Event[] events = db.habitDao().loadAllEventsForHabit(id);
 
                 // Go to the tab to edit the habit.timestamp
                 editHabitCallback.accept(new Pair<>(habit, events));

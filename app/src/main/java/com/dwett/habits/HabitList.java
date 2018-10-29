@@ -1,9 +1,6 @@
 package com.dwett.habits;
 
 import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -46,7 +43,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         final HabitList thisList = this;
         final Habit thisHabit = this.habits.get(position);
         holder.title.setText(thisHabit.title);
-        Event[] events = db.habitDao().loadEventsForHabit(thisHabit.id);
+        Event[] events = HabitLogic.loadEventsInCurrentPeriod(db.habitDao(), thisHabit);
         holder.description.setText(HabitLogic.getDescription(thisHabit, events));
 
 
@@ -66,7 +63,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         }
 
         holder.itemView.setOnLongClickListener(v -> {
-            Event[] events1= db.habitDao().loadEventsForHabit(thisHabit.id);
+            Event[] events1 = db.habitDao().loadAllEventsForHabit(thisHabit.id);
 
             editHabitCallback.accept(new Pair<>(thisHabit, events1));
             return true;
@@ -83,7 +80,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
 
                 db.habitDao().insertNewEvent(event);
 
-                Event[] events1 = db.habitDao().loadEventsForHabit(thisHabit.id);
+                Event[] events1 = HabitLogic.loadEventsInCurrentPeriod(db.habitDao(), thisHabit);
                 if (HabitLogic.isDone(thisHabit, events1)) {
                     // Habit is finished, re-sort!
                     if (!thisList.sort()) {
@@ -144,7 +141,7 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
         final Map<Long, Boolean> idToIsDone = new HashMap<>(habits.size());
         int i = 0;
         for (Habit h : habits) {
-            Event[] events = db.habitDao().loadEventsForHabit(h.id);
+            Event[] events = HabitLogic.loadEventsInCurrentPeriod(db.habitDao(), h);
             idToIsDone.put(h.id, HabitLogic.isDone(h, events));
             originalIDOrder[i++] = h.id;
         }

@@ -29,9 +29,15 @@ public interface HabitDao {
     @Query("SELECT * FROM habit")
     Habit[] loadAllHabits();
 
+    @Query("SELECT * FROM habit WHERE archived_2 == 0")
+    Habit[] loadNonArchivedHabits();
+
     @Query("SELECT * FROM habit WHERE id = :habitId")
     Habit loadHabit(long habitId);
 
-    @Query("SELECT * FROM event where habit_id = :habitId")
-    Event[] loadEventsForHabit(long habitId);
+    @Query("SELECT * FROM event WHERE habit_id = :habitId")
+    Event[] loadAllEventsForHabit(long habitId);
+
+    @Query("SELECT * FROM event WHERE habit_id = :habitId AND timestamp >= :timestamp")
+    Event[] loadEventsForHabitSince(long habitId, long timestamp);
 }

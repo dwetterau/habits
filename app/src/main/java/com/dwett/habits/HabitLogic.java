@@ -9,6 +9,11 @@ import java.util.Locale;
 
 class HabitLogic {
 
+    static Event[] loadEventsInCurrentPeriod(HabitDao hd, Habit h) {
+        long start = periodStart(h).atZone(ZoneId.systemDefault()).toEpochSecond();
+        return hd.loadEventsForHabitSince(h.id, start);
+    }
+
     static String getDescription(Habit h, Event[] events) {
         int numEvents = numEventsInCurrentPeriod(h, events);
         if (numEvents >= h.frequency) {
@@ -60,7 +65,8 @@ class HabitLogic {
             LocalDateTime cur = Instant.ofEpochMilli(e.timestamp)
                     .atZone(ZoneId.systemDefault())
                     .toLocalDateTime();
-            if (cur.isAfter(start)) {
+            // Note: what we really want here is cur >= start
+            if (!cur.isBefore(start)) {
                 num++;
             }
         }
