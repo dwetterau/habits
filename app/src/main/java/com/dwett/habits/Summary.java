@@ -140,6 +140,16 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         Map<Long, String> eventIdToSummaryWeek = new HashMap<>(allEvents.size());
         LinkedList<Habit> habitsWithEventsInPage = new LinkedList<>();
         LinkedList<String> summaryWeeks = new LinkedList<>();
+
+        // We assume all non-archived events are still active
+        String currentSummaryWeek = currentSummaryWeek();
+        for (Habit h : habitIDToHabit.values()) {
+            if (h.archived) {
+                continue;
+            }
+            habitIdToEndWeek.put(h.id, currentSummaryWeek);
+        }
+
         for (Event e : allEvents) {
             String summaryWeek = summaryWeekFromEvent(e);
             eventIdToSummaryWeek.put(e.id, summaryWeek);
@@ -148,7 +158,9 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
                 habitsWithEventsInPage.add(habitIDToHabit.get(e.habitId));
                 habitIdToStartWeek.put(e.habitId, summaryWeek);
             }
-            habitIdToEndWeek.put(e.habitId, summaryWeek);
+            if (habitIDToHabit.get(e.habitId).archived) {
+                habitIdToEndWeek.put(e.habitId, summaryWeek);
+            }
 
             if (summaryWeeks.size() == 0 || !summaryWeeks.getLast().equals(summaryWeek)) {
                 summaryWeeks.add(summaryWeek);
@@ -194,10 +206,19 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
         return summaries;
     }
 
+    private static String currentSummaryWeek() {
+        LocalDateTime time = LocalDateTime.now();
+        return summaryWeekFromTime(time);
+    }
+
     private static String summaryWeekFromEvent(Event e) {
         LocalDateTime time = Instant.ofEpochMilli(e.timestamp)
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
+        return summaryWeekFromTime(time);
+    }
+
+    private static String summaryWeekFromTime(LocalDateTime time) {
         DayOfWeek today = time.getDayOfWeek();
         while (today != DayOfWeek.MONDAY) {
             time = time.minusDays(1);
