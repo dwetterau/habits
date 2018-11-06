@@ -166,8 +166,13 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
                 summaryWeeks.add(summaryWeek);
             }
         }
-        // Sort all the habits so that higher frequency ones are first
-        Collections.sort(habitsWithEventsInPage, (o1, o2) -> o2.frequency - o1.frequency);
+        // Sort all the habits so that higher frequency ones are first, then by title
+        Collections.sort(habitsWithEventsInPage, (o1, o2) -> {
+            if (o1.frequency == o2.frequency) {
+                return o1.title.compareTo(o2.title);
+            }
+            return o2.frequency - o1.frequency;
+        });
 
         // Now we finish populating everything
         Set<Long> startedHabits = new HashSet<>(habitsWithEventsInPage.size());
@@ -185,21 +190,23 @@ public class Summary extends RecyclerView.Adapter<Summary.SummaryHolder> {
                     endedHabits.add(h.id);
                 }
 
-                // Only add a summary if this is after the start week or before or equal the end week
-                if (startedHabits.contains(h.id) && (!endedHabits.contains(h.id) || justEnded)) {
-                    // Omit entries for archived habits if they have no events for the week.
-                    List<Event> eventsInWeek = habitIDToEvent
-                            .getOrDefault(h.id, new LinkedList<>())
-                            .stream()
-                            .filter(
-                                (event) -> eventIdToSummaryWeek.get(event.id).equals(summaryWeek)
-                            )
-                            .collect(Collectors.toList());
-                    if (eventsInWeek.size() == 0 && h.archived) {
-                        continue;
-                    }
-                    toAdd.addSummaryForHabit(h, eventsInWeek);
+                // Only skip adding a summary for archived events if this is after the start week
+                // or before or equal the end week
+                if (h.archived && (!startedHabits.contains(h.id)
+                        || (endedHabits.contains(h.id) && !justEnded))) {
+                    continue;
                 }
+
+                // Omit entries for archived habits if they have no events for the week.
+                List<Event> eventsInWeek = habitIDToEvent
+                        .getOrDefault(h.id, new LinkedList<>())
+                        .stream()
+                        .filter(
+                            (event) -> eventIdToSummaryWeek.get(event.id).equals(summaryWeek)
+                        )
+                        .collect(Collectors.toList());
+
+                toAdd.addSummaryForHabit(h, eventsInWeek);
             }
             summaries.addFirst(toAdd);
         }
