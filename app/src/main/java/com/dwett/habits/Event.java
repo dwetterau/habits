@@ -4,6 +4,7 @@ import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.ForeignKey;
 import android.arch.persistence.room.PrimaryKey;
+import android.support.annotation.NonNull;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -39,5 +40,14 @@ public class Event {
             dt = dt.plusMinutes(59 - dt.getMinute());
             this.timestamp = dt.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
         }
+    }
+
+    @NonNull
+    public static String csvHeader() {
+        return "id,habitId,timestamp\n";
+    }
+
+    public String csv() {
+        return id + "," + habitId + "," + timestamp;
     }
 }

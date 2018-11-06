@@ -6,15 +6,15 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Pair;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -26,6 +26,7 @@ import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -199,6 +200,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
+        final Button habitExportButton = manageHabitView.findViewById(R.id.export_button);
         habitCreateButton.setOnClickListener(v -> {
             Habit h = new Habit();
             AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
@@ -242,6 +244,17 @@ public class MainActivity extends AppCompatActivity {
             BottomNavigationView navigation = findViewById(R.id.navigation);
             navigation.setSelectedItemId(R.id.navigation_habits);
             inflateBasedOffMenuItem(R.id.navigation_habits);
+        });
+
+        habitExportButton.setOnClickListener(v -> {
+            Intent exportActivity = new Intent(this, DisplayExportActivity.class);
+            Habit[] habits = db.habitDao().loadAllHabits();
+            Event[] events = db.habitDao().loadAllEventsSince(0);
+            String habitsCSV = String.join("\n", Arrays.stream(habits).map(Habit::csv).collect(Collectors.toList()));
+            String eventsCSV = String.join("\n", Arrays.stream(events).map(Event::csv).collect(Collectors.toList()));
+            exportActivity.putExtra("habits", habitsCSV);
+            exportActivity.putExtra("events", eventsCSV);
+            startActivity(exportActivity);
         });
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
@@ -289,6 +302,7 @@ public class MainActivity extends AppCompatActivity {
             habitCreateButton.setText(R.string.save_habit);
             habitArchiveSwitch.setVisibility(View.VISIBLE);
             habitDeleteButton.setVisibility(View.VISIBLE);
+            habitExportButton.setVisibility(View.INVISIBLE);
             final AlertDialog.Builder deleteConfirmer = new AlertDialog.Builder(manageHabitView.getContext())
                     .setTitle("Confirm habit deletion")
                     .setMessage("Do you really want to delete this habit?")
@@ -323,6 +337,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             habitDeleteButton.setVisibility(View.INVISIBLE);
             habitArchiveSwitch.setVisibility(View.INVISIBLE);
+            habitExportButton.setVisibility(View.VISIBLE);
             habitCreateButton.setText(R.string.create_habit);
         }
 

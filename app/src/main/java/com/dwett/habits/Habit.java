@@ -3,6 +3,7 @@ package com.dwett.habits;
 import android.arch.persistence.room.ColumnInfo;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
+import android.support.annotation.NonNull;
 
 @Entity
 class Habit {
@@ -31,4 +32,13 @@ class Habit {
      */
     @ColumnInfo(name = "archived_2")
     boolean archived;
+
+    @NonNull
+    public static String csvHeader() {
+        return "id,period,frequency,archived,title\n";
+    }
+
+    public String csv() {
+        return id + "," + period + "," + frequency + "," + archived + "," + title;
+    }
 }

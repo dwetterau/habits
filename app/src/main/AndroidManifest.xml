@@ -23,6 +23,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".DisplayExportActivity" android:parentActivityName=".MainActivity" />
+
         <!-- Register the Alarm Receiver -->
         <receiver android:name=".AlarmReceiver"
             android:enabled="false">
