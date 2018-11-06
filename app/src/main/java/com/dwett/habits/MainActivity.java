@@ -1,13 +1,11 @@
 package com.dwett.habits;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.NotificationManagerCompat;
@@ -265,7 +263,6 @@ public class MainActivity extends AppCompatActivity {
         );
         eventListRecyclerView.setLayoutManager(eventListRecyclerViewLayoutManager);
 
-        final Button habitDeleteButton = manageHabitView.findViewById(R.id.habit_delete_button);
         final Switch habitArchiveSwitch = manageHabitView.findViewById(R.id.habit_archive_switch);
         final AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
         final EditText habitCreateFrequencyInput = manageHabitView.findViewById(R.id.habit_frequency_input);
@@ -301,27 +298,7 @@ public class MainActivity extends AppCompatActivity {
 
             habitCreateButton.setText(R.string.save_habit);
             habitArchiveSwitch.setVisibility(View.VISIBLE);
-            habitDeleteButton.setVisibility(View.VISIBLE);
             habitExportButton.setVisibility(View.INVISIBLE);
-            final AlertDialog.Builder deleteConfirmer = new AlertDialog.Builder(manageHabitView.getContext())
-                    .setTitle("Confirm habit deletion")
-                    .setMessage("Do you really want to delete this habit?")
-                    .setNegativeButton(android.R.string.no, null);
-
-            habitDeleteButton.setOnClickListener(v -> deleteConfirmer.setPositiveButton(
-                    android.R.string.yes,
-                    (dialog, which) -> {
-                        db.habitDao().deleteHabit(habitToEdit);
-                        habitList.removeHabit(habitList.getHabitIndex(habitToEdit));
-                        habitToEdit = null;
-                        eventsForHabitToEdit = null;
-
-                        // Clear all the other state too by reloading this view
-                        habitCreateTextInput.setText("");
-                        habitCreateFrequencyInput.setText("");
-                        inflateManageHabits();
-                    }
-            ).show());
 
             Arrays.sort(eventsForHabitToEdit, (e1, e2) -> {
                 long r = (e2.timestamp - e1.timestamp);
@@ -335,7 +312,6 @@ public class MainActivity extends AppCompatActivity {
             });
             events.addAll(eventsForHabitToEdit);
         } else {
-            habitDeleteButton.setVisibility(View.INVISIBLE);
             habitArchiveSwitch.setVisibility(View.INVISIBLE);
             habitExportButton.setVisibility(View.VISIBLE);
             habitCreateButton.setText(R.string.create_habit);
