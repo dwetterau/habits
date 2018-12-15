@@ -20,13 +20,14 @@ An Android habit-tracking app
 - On the Summary page, you can tap an "archived" habit to un-archive it.
 
 ## Detailed Features
-- Ability to add, edit, archive, and delete habits with customizable frequency (per week)
+- Ability to add, and edit habits with customizable frequency (per week)
 - Daily push notification reminders to fill out habit status (currently at 11pm, see TODO below)
 - Summary view to track your habit formation
 - Color-coded progress bars on habits to identify which ones you're behind on
 - Ability to archive habits after they've formed, or if you want to ignore them for now.
-- Ability to tweak all logged events (in case you forget or accidentally tap)
+- Ability to tweak (add, adjust time, or delete) all logged events (in case you forget or accidentally tap).
 - Log events marked "Done" near midnight to the previous day (tunable soon, see TODO below).
+- Ability to export all information from the app to a CSV (sorry, you have to copy-paste it for now)
 
 ## TODO
 - Tests :)
@@ -36,4 +37,4 @@ An Android habit-tracking app
   fetch more if you scroll to the bottom.
 - A settings page! First up: configurable reminder notification time and near-midnight thresholds.
 - Next setting up: The ability to disable notifications
-- Export to a parsable format (probably CSV?)
+- Add copy button on export view
