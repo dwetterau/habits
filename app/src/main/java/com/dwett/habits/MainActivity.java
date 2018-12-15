@@ -21,6 +21,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.function.Consumer;
@@ -290,6 +291,11 @@ public class MainActivity extends AppCompatActivity {
 
                 db.habitDao().updateHabit(habitToEdit);
                 habitList.notifyHabitUpdated(habitToEdit);
+                Toast.makeText(
+                        v.getContext(),
+                        "Habit details saved!",
+                        Toast.LENGTH_SHORT
+                ).show();
 
                 // Close the keyboard hackily?
                 InputMethodManager in = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);

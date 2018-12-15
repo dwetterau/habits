@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -61,44 +62,31 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
                 .atZone(ZoneId.systemDefault())
                 .toLocalDateTime();
         holder.eventDate.setText(time.format(DateTimeFormatter.ofPattern("MMMM d, yyyy")));
-        holder.eventDate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // First show a date picker to allow the date to be adjusted
-                EventDatePicker datePicker = new EventDatePicker();
-                datePicker.setEvent(thisEvent);
-                datePicker.setEventList(thisList);
-                datePicker.show(thisList.fm, "datePicker");
-            }
+        holder.eventDate.setOnClickListener(v -> {
+            // First show a date picker to allow the date to be adjusted
+            EventDatePicker datePicker = new EventDatePicker();
+            datePicker.setEvent(thisEvent);
+            datePicker.setEventList(thisList);
+            datePicker.show(thisList.fm, "datePicker");
         });
+
         holder.eventTime.setText(time.format(DateTimeFormatter.ofPattern("@ hh:mma")));
-        holder.eventTime.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // First show a time picker to allow the time to be adjusted
-                EventTimePicker timePicker = new EventTimePicker();
-                timePicker.setEvent(thisEvent);
-                timePicker.setEventList(thisList);
-                timePicker.show(thisList.fm, "timePicker");
-            }
+        holder.eventTime.setOnClickListener(v -> {
+            // First show a time picker to allow the time to be adjusted
+            EventTimePicker timePicker = new EventTimePicker();
+            timePicker.setEvent(thisEvent);
+            timePicker.setEventList(thisList);
+            timePicker.show(thisList.fm, "timePicker");
         });
 
-        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                final Event thisEvent = thisList.events.get(holder.getAdapterPosition());
-
-                deleteEventConfirmerBuilder.setPositiveButton(
-                        android.R.string.yes,
-                        new DialogInterface.OnClickListener() {
-
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                db.habitDao().deleteEvent(thisEvent);
-                                thisList.removeEvent(holder.getAdapterPosition());
-                            }
-                        }
-                ).show();
-            }
+        holder.deleteButton.setOnClickListener(v -> {
+            deleteEventConfirmerBuilder.setPositiveButton(
+                    android.R.string.yes,
+                    (dialog, whichButton) -> {
+                        db.habitDao().deleteEvent(thisEvent);
+                        thisList.removeEvent(holder.getAdapterPosition());
+                    }
+            ).show();
         });
     }
 
@@ -245,6 +233,7 @@ public class EventList extends RecyclerView.Adapter<EventList.EventHolder> {
 
             e.timestamp = newDateTime.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
             list.db.habitDao().updateEvent(e);
+            Toast.makeText(getActivity(), "Event updated!", Toast.LENGTH_SHORT).show();
             list.notifyEventUpdated(e);
         }
     }

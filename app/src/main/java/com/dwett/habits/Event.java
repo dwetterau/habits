@@ -29,7 +29,8 @@ public class Event {
     @ColumnInfo(name = "timestamp")
     long timestamp;
 
-    public void maybeAdjustTimestampToPreviousDay() {
+    // Returns true if the time was adjusted, false otherwise
+    public boolean maybeAdjustTimestampToPreviousDay() {
         // If the time is between midnight and 3am, we want to record it for the
         // previous day at 11:59pm instead.
         LocalDateTime dt = Instant.ofEpochMilli(this.timestamp)
@@ -39,7 +40,9 @@ public class Event {
             dt = dt.minusHours(dt.getHour() + 1);
             dt = dt.plusMinutes(59 - dt.getMinute());
             this.timestamp = dt.atZone(ZoneId.systemDefault()).toEpochSecond() * 1000L;
+            return true;
         }
+        return false;
     }
 
     @NonNull

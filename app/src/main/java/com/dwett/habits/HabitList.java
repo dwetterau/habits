@@ -9,6 +9,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,7 +77,13 @@ public class HabitList extends RecyclerView.Adapter<HabitList.HabitHolder> {
                 event.habitId = thisHabit.id;
 
                 event.timestamp = System.currentTimeMillis();
-                event.maybeAdjustTimestampToPreviousDay();
+                if (event.maybeAdjustTimestampToPreviousDay()) {
+                    Toast.makeText(
+                            v.getContext(),
+                            "Recorded event to yesterday.",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                }
 
                 db.habitDao().insertNewEvent(event);
 
