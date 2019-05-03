@@ -1,10 +1,12 @@
 package com.dwett.habits;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.BottomNavigationView;
@@ -12,6 +14,8 @@ import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.InputType;
+import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,6 +28,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -200,6 +206,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button habitCreateButton = manageHabitView.findViewById(R.id.habit_create_button);
         final Button habitExportButton = manageHabitView.findViewById(R.id.export_button);
+        final Button habitImportButton = manageHabitView.findViewById(R.id.import_button);
         habitCreateButton.setOnClickListener(v -> {
             Habit h = new Habit();
             AutoCompleteTextView habitCreateTextInput = manageHabitView.findViewById(R.id.habit_title_input);
@@ -255,6 +262,106 @@ public class MainActivity extends AppCompatActivity {
             exportActivity.putExtra("events", eventsCSV);
             startActivity(exportActivity);
         });
+
+        habitImportButton.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Import Habits");
+
+            final EditText input = new EditText(this);
+            input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+            builder.setView(input);
+
+            builder.setPositiveButton("Import", (dialog, which) -> {
+                String importText = input.getText().toString();
+                String[] allLines = importText.split("\n");
+
+                // Some sanity checks over the format
+                int eventStart = -1;
+                boolean valid = true;
+                if (allLines.length < 3) {
+                    valid = false;
+                } else if (!allLines[0].equals("Habits")) {
+                    valid = false;
+                } else if (!(allLines[1] + "\n").equals(Habit.csvHeader())) {
+                    valid = false;
+                } else {
+                    // Find the index where events start.
+                    for (int i = 2; i < allLines.length; i++) {
+                        if (allLines[i].length() == 0) {
+                            eventStart = i + 1;
+                            break;
+                        }
+                    }
+                    if (eventStart == -1) {
+                        valid = false;
+                    } else if (!allLines[eventStart].equals("Events")) {
+                    valid = false;
+                } else if (!(allLines[eventStart + 1] + "\n").equals(Event.csvHeader())) {
+                        valid = false;
+                    }
+                }
+
+                if (!valid) {
+                    Toast.makeText(
+                            v.getContext(),
+                            "Invalid input data!",
+                            Toast.LENGTH_SHORT
+                    ).show();
+                    return;
+                }
+
+                String[] habitLines = Arrays.copyOfRange(allLines, 2, eventStart - 1);
+                String[] eventLines = Arrays.copyOfRange(allLines, eventStart + 2, allLines.length);
+
+                Habit[] allHabits = db.habitDao().loadAllHabits();
+                Event[] allEvents = db.habitDao().loadAllEventsSince(0);
+                HashSet<Long> habitIDs = new HashSet<>(allHabits.length);
+                for (Habit h : allHabits) {
+                    habitIDs.add(h.id);
+                }
+                HashSet<Long> eventIDs = new HashSet<>(allEvents.length);
+                for (Event e : allEvents) {
+                    eventIDs.add(e.id);
+                }
+
+                for (String habitCSV : habitLines) {
+                    if (habitCSV.length() == 0) {
+                        continue;
+                    }
+                    Habit h = Habit.fromCSV(habitCSV);
+                    if (habitIDs.contains(h.id)) {
+                        continue;
+                    }
+                    db.habitDao().insertNewHabit(h);
+                }
+                for (String eventCSV : eventLines) {
+                    if (eventCSV.length() == 0) {
+                        continue;
+                    }
+                    Event e = Event.fromCSV(eventCSV);
+                    if (eventIDs.contains(e.id)) {
+                        continue;
+                    }
+                    db.habitDao().insertNewEvent(e);
+                }
+                Toast.makeText(
+                        v.getContext(),
+                        String.format(
+                                Locale.ENGLISH,
+                                "Imported %d habits and %d events!",
+                                habitLines.length,
+                                eventLines.length
+                        ),
+                        Toast.LENGTH_SHORT
+                ).show();
+            });
+
+            builder.setNegativeButton("Cancel", (dialog, which) -> {
+                dialog.cancel();
+            });
+            builder.show();
+        });
+
 
         RecyclerView eventListRecyclerView = manageHabitView.findViewById(R.id.event_list_recycler_view);
         EventList events = new EventList(new Event[]{}, db, getFragmentManager());

@@ -5,6 +5,8 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
+import java.util.Arrays;
+
 @Entity
 class Habit {
     @PrimaryKey(autoGenerate = true)
@@ -40,5 +42,19 @@ class Habit {
 
     public String csv() {
         return id + "," + period + "," + frequency + "," + archived + "," + title;
+    }
+
+    public static Habit fromCSV(String csv) {
+        String[] parts = csv.split(",");
+        if (parts.length < 5) {
+            throw new RuntimeException("invalid habit csv");
+        }
+        Habit h = new Habit();
+        h.id = Integer.parseInt(parts[0]);
+        h.period = Integer.parseInt(parts[1]);
+        h.frequency = Integer.parseInt(parts[2]);
+        h.archived = Boolean.parseBoolean(parts[3]);
+        h.title = String.join(",", Arrays.copyOfRange(parts, 4, parts.length));
+        return h;
     }
 }

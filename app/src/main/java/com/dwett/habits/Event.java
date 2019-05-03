@@ -53,4 +53,16 @@ public class Event {
     public String csv() {
         return id + "," + habitId + "," + timestamp;
     }
+
+    public static Event fromCSV(String csv) {
+        String[] parts = csv.split(",");
+        if (parts.length != 3) {
+            throw new RuntimeException("invalid event csv");
+        }
+        Event e = new Event();
+        e.id = Integer.parseInt(parts[0]);
+        e.habitId = Integer.parseInt(parts[1]);
+        e.timestamp = Long.parseLong(parts[2]);
+        return e;
+    }
 }
