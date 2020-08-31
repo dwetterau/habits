@@ -412,6 +412,7 @@ public class MainActivity extends AppCompatActivity {
             habitCreateButton.setText(R.string.save_habit);
             habitArchiveSwitch.setVisibility(View.VISIBLE);
             habitExportButton.setVisibility(View.INVISIBLE);
+            habitImportButton.setVisibility(View.INVISIBLE);
 
             Arrays.sort(eventsForHabitToEdit, (e1, e2) -> {
                 long r = (e2.timestamp - e1.timestamp);
@@ -427,6 +428,7 @@ public class MainActivity extends AppCompatActivity {
         } else {
             habitArchiveSwitch.setVisibility(View.INVISIBLE);
             habitExportButton.setVisibility(View.VISIBLE);
+            habitImportButton.setVisibility(View.VISIBLE);
             habitCreateButton.setText(R.string.create_habit);
         }
 
