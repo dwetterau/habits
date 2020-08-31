@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -17,6 +18,7 @@ import android.support.v7.widget.RecyclerView;
 import android.text.InputType;
 import android.util.Log;
 import android.util.Pair;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -27,6 +29,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -46,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
     private Habit habitToEdit;
     private Event[] eventsForHabitToEdit;
     private habitEditor habitEditor;
+
+    private ArrayList<Integer> menuItemStack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
         habitList = new HabitList(allHabits, db, this.habitEditor);
         habitList.sort();
 
+        this.menuItemStack = new ArrayList<>();
         BottomNavigationView navigation = findViewById(R.id.navigation);
         navigation.setOnNavigationItemSelectedListener(item -> inflateBasedOffMenuItem(item.getItemId()));
         this.inflateBasedOffMenuItem(navigation.getSelectedItemId());
@@ -107,7 +113,6 @@ public class MainActivity extends AppCompatActivity {
             a.setHabitToEdit(pair.first, pair.second);
             BottomNavigationView navigation = findViewById(R.id.navigation);
             navigation.setSelectedItemId(R.id.navigation_manage);
-            a.inflateBasedOffMenuItem(R.id.navigation_manage);
         }
     }
 
@@ -115,6 +120,7 @@ public class MainActivity extends AppCompatActivity {
      * Returns if a known type was selected
      */
     private boolean inflateBasedOffMenuItem(int item) {
+        this.menuItemStack.add(item);
         switch (item) {
             case R.id.navigation_summary:
                 this.hideManageHabits();
@@ -137,6 +143,18 @@ public class MainActivity extends AppCompatActivity {
                 return false;
         }
         return true;
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (this.menuItemStack.size() <= 1) {
+            super.onBackPressed();
+            return;
+        }
+        this.menuItemStack.remove(this.menuItemStack.size()-1);
+        int last = this.menuItemStack.remove(this.menuItemStack.size()-1);
+        BottomNavigationView navigation = findViewById(R.id.navigation);
+        navigation.setSelectedItemId(last);
     }
 
     private void maybeShowNoHabitWarning(boolean isEmpty) {
@@ -249,7 +267,6 @@ public class MainActivity extends AppCompatActivity {
             // Let's also navigate away to the habits view
             BottomNavigationView navigation = findViewById(R.id.navigation);
             navigation.setSelectedItemId(R.id.navigation_habits);
-            inflateBasedOffMenuItem(R.id.navigation_habits);
         });
 
         habitExportButton.setOnClickListener(v -> {
