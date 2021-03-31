@@ -1,0 +1,9 @@
+Initial APK release, synced with Google Play store
+
+Latest changes:
+- Fixed some issues with event detail cards being too narrow
+- Enable the back button for easier navigation rather than always exiting the app
+- Added the ability to import content (Manage -> Import)
+- Upgrade to SDK version 28, which is sadly still behind
+
+See all changes on the Github page: https://github.com/dwetterau/habits
